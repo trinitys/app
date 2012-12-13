@@ -86,7 +86,7 @@
 				<? if($displayAdminDashboardChromedArticle) { ?>
 					<?= (string)$app->sendRequest( 'AdminDashboardSpecialPage', 'chromedArticleHeader', array('headerText' => $wg->Title->getText() )) ?>
 				<? } ?>
-				
+
 				<div class="home-top-right-ads">
 				<?php
 					if (in_array('leaderboard', $wg->ABTests)) {
@@ -145,6 +145,8 @@
 		<?= $app->renderView('CorporateFooter', 'Index') ?>
 	</div>
 </section><!--WikiaPage-->
+
+<? if ( !empty( $wg->EnableTray ) ) echo $app->renderView('Tray', 'index') ?>
 
 <?php if( $wg->EnableWikiaBarExt ): ?>
 	<?= $app->renderView('WikiaBar', 'Index'); ?>

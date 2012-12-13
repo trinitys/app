@@ -36,8 +36,10 @@
 					<?= (empty($wg->WikiaSeasonsGlobalHeader) ? '' : F::app()->renderView('WikiaSeasons', 'globalHeaderLights', array())); ?>
 				</ul>
 			</nav>
+			<? if ( empty( $wg->EnableTray ) ) { ?>
 			<?= F::app()->renderView('AccountNavigation', 'Index') ?>
 			<?= F::app()->renderView('WallNotifications', 'Index'); ?>
+			<? } ?>
 			<img src="<?= $wg->BlankImgUrl ?>" class="banner-corner-left" width="0" height="0">
 			<img src="<?= $wg->BlankImgUrl ?>" class="banner-corner-right" width="0" height="0">
 		</div>

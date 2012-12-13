@@ -9,6 +9,10 @@ class SearchController extends WikiaController {
 
 	public function executeIndex() {
 
+		if ( !empty( $this->wg->EnableTray ) ) {
+			$this->skipRendering();
+		}
+
 		$this->searchterm = $this->wg->request->getVal('search');
 		$this->noautocomplete = $this->wg->request->getVal('noautocomplete');
 
