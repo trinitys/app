@@ -303,6 +303,7 @@ var NodeChatDiscussion = Backbone.View.extend({
 			} else {
 		 		$('#ChatHeader .public').hide();
 		 		$('#ChatHeader .private').text($.msg('chat-private-headline').replace('$1', status.get('privateUser').get('name'))).show();
+		 		this.startVideoChat();
 			}
 		} else {
 			room.removeClass('selected');
@@ -387,6 +388,21 @@ var NodeChatDiscussion = Backbone.View.extend({
 
 		if(isAtBottom)	this.forceScroll = true;
 		else			this.forceScroll = false;
+	},
+	startVideoChat: function () {
+		$('#Write').hide();
+		
+		this.chatDiv.append('<video id="VideoChat" class="VideoChat" autoplay="autoplay" />');
+
+		var onGotStream = function(stream) {
+			var url = webkitURL.createObjectURL(stream);
+			document.getElementById("VideoChat").src = url;
+		}
+		
+		var onFailedStream = function() {};
+		
+		navigator.webkitGetUserMedia({video:true}, onGotStream, onFailedStream);
+
 	}
 });
 //TODO: rename it to frame NodeChatFrame ?
