@@ -711,15 +711,41 @@ var NodeChatController = $.createClass(NodeRoomController,{
 		
 		function gotDescription1(desc){
 			pc1.setLocalDescription(desc);
+
+
+
 			trace("Offer from pc1 \n" + desc.sdp);
+			sendOffer(desc);
+			//pc2.setRemoteDescription(desc);
+			//pc2.createAnswer(gotDescription2);
+		}
+
+		function sendOffer(desc) {
+			$().log(desc);
+			var sdp = desc.sdp;
+			var desc2 = new RTCSessionDescription({type:"offer", sdp:sdp});
+
+			receiveOffer(desc2);
+		}
+
+		function receiveOffer(desc) {
 			pc2.setRemoteDescription(desc);
 			pc2.createAnswer(gotDescription2);
 		}
-		
+
+
+		function sendAnswer(desc) {
+			receiveAnswer(desc);
+		}
+
+		function receiveAnswer(desc) {
+			pc1.setRemoteDescription(desc);
+		}
+
 		function gotDescription2(desc){
 			pc2.setLocalDescription(desc);
 			trace("Answer from pc2 \n" + desc.sdp);
-			pc1.setRemoteDescription(desc);
+			sendAnswer(desc);
 		}
 		
 		function hangup() {
