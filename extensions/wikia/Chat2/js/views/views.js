@@ -390,18 +390,18 @@ var NodeChatDiscussion = Backbone.View.extend({
 		else			this.forceScroll = false;
 	},
 	startVideoChat: function () {
-		$('#Write').hide();
-		
-		this.chatDiv.append('<video id="VideoChat" class="VideoChat" autoplay="autoplay" />');
 
-		var onGotStream = function(stream) {
+		
+		this.chatDiv.append('<video id="vid1" autoplay></video><video id="vid2" autoplay></video><br><button id="btn1">Start</button><button id="btn2">Call</button><button id="btn3">Hang Up</button>');
+
+		/*var onGotStream = function(stream) {
 			var url = webkitURL.createObjectURL(stream);
 			document.getElementById("VideoChat").src = url;
 		}
 		
 		var onFailedStream = function() {};
 		
-		navigator.webkitGetUserMedia({video:true}, onGotStream, onFailedStream);
+		navigator.webkitGetUserMedia({video:true}, onGotStream, onFailedStream);*/
 
 	}
 });
