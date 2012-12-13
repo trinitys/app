@@ -730,6 +730,7 @@ var NodeChatController = $.createClass(NodeRoomController,{
 			pc2 = null;
 			btn3.disabled = true;
 			btn2.disabled = false;
+			vid2.src = "";
 		}
 		
 		function gotRemoteStream(e){
