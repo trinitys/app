@@ -15,7 +15,7 @@ class CodeLintMessages extends CodeLint {
 
 	// file name pattern - used when linting directories
 	protected $filePattern = '*.i18n.php';
-	protected $backtrace = null;
+
 	protected $currentFile = null;
 
 	public function __construct() {
