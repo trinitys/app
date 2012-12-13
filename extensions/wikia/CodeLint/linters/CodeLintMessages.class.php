@@ -1,8 +1,8 @@
 <?php
 
 /**
- * CodeLintJs
- * Class used for linting JS code
+ * CodeLint i18n
+ * Class used for linting i18n files / message usage
  * @author Sebastian Marzjan
  */
 
