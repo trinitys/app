@@ -28,7 +28,7 @@ USAGE: php codelint.php --file|--dir [--help] [--blacklist] [--mode] [--format] 
 		Comma separated list of directories / files to skip when performing lint check
 
 	--mode
-		Set working mode (can be "php", "js" or "css")
+		Set working mode (can be "php", "js", "css" or "messages")
 
 	--format[=text]
 		Report format (either text, json or html)

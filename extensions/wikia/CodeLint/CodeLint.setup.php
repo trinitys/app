@@ -35,6 +35,7 @@ $app->registerClass('CodeLint', $dir . '/CodeLint.class.php');
 $app->registerClass('CodeLintCss', $dir . '/linters/CodeLintCss.class.php');
 $app->registerClass('CodeLintJs', $dir . '/linters/CodeLintJs.class.php');
 $app->registerClass('CodeLintPhp', $dir . '/linters/CodeLintPhp.class.php');
+$app->registerClass('CodeLintMessages', $dir . '/linters/CodeLintMessages.class.php');
 
 // report formatters
 $app->registerClass('CodeLintReport', $dir . '/CodeLintReport.class.php');
