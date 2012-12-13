@@ -1,133 +1,56 @@
+<?php
+// This is from google translate, just return early.
+if ( $_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+	header ( "HTTP/1.1 200", true, 200);
+	return;
+}
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>PeerConnection Demo 1</title>
-    <style>
-        video {
-            border:5px solid black;
-            width:480px;
-            height:360px;
-        }
-        button {
-            font: 18px sans-serif;
-            padding: 8px;
-        }
-        textarea {
-            font-family: monospace;
-            margin: 2px;
-            width:480px;
-            height:640px;
-        }
-    </style>
-</head>
-<body>
-<video id="vid1" autoplay></video>
-<video id="vid2" autoplay></video>
-<br>
-<button id="btn1" onclick="start()">Start</button>
-<button id="btn2" onclick="call()">Call</button>
-<button id="btn3" onclick="hangup()">Hang Up</button>
-<br>
-<xtextarea id="ta1"></textarea>
-    <xtextarea id="ta2"></textarea>
-        <script>
-            //var vid1 = document.getElementById("vid1");
-            //var vid2 = document.getElementById("vid2");
-            btn1.disabled = false;
-            btn2.disabled = true;
-            btn3.disabled = true;
-            var pc1,pc2;
-            var localstream;
+// Initialise common MW code
+require ( dirname( __FILE__ ) . '/includes/WebStart.php' );
 
-            function trace(text) {
-                // This function is used for logging.
-                if (text[text.length - 1] == '\n') {
-                    text = text.substring(0, text.length - 1);
-                }
-                     console.log( text);
-            }
+if ($wgProfiler instanceof Profiler) {
+	$wgProfiler->setTemplated(true);
+}
 
-            function gotStream(stream){
-                trace("Received local stream");
-                vid1.src = webkitURL.createObjectURL(stream);
-                localstream = stream;
-                btn2.disabled = false;
-            }
+// Construct a tag for newrelic -- wgRequest is global in this scope
+if( function_exists( 'newrelic_name_transaction' ) ) {
+	if ( function_exists( 'newrelic_disable_autorum') ) {
+		newrelic_disable_autorum();
+	}
+	newrelic_name_transaction('Nirvana');
+	if ( function_exists( 'newrelic_add_custom_parameter' ) && is_object($wgRequest)) {
+		newrelic_add_custom_parameter( 'controller', $wgRequest->getVal( 'controller' ) );
+		newrelic_add_custom_parameter( 'method', $wgRequest->getVal( 'method' ) );
+	}
+}
 
-            function start() {
-                trace("Requesting local stream");
-                btn1.disabled = true;
-                navigator.webkitGetUserMedia({audio:true, video:true},
-                        gotStream, function() {});
-            }
+if ( !empty( $wgEnableNirvanaAPI ) ){
+	$app = F::app();
 
-            function call() {
-                btn2.disabled = true;
-                btn3.disabled = false;
-                trace("Starting call");
-                if (localstream.videoTracks.length > 0)
-                    trace('Using Video device: ' + localstream.videoTracks[0].label);
-                if (localstream.audioTracks.length > 0)
-                    trace('Using Audio device: ' + localstream.audioTracks[0].label);
-                var servers = null;
-                pc1 = new webkitRTCPeerConnection(servers);
-                trace("Created local peer connection object pc1");
-                pc1.onicecandidate = iceCallback1;
-                pc2 = new webkitRTCPeerConnection(servers);
-                trace("Created remote peer connection object pc2");
-                pc2.onicecandidate = iceCallback2;
-                pc2.onaddstream = gotRemoteStream;
+	// Ensure that we have a title stub, otherwise parser does not work BugId: 12901
+	$app->wg->title = Wikia::createTitleFromRequest( $app->wg->Request );
 
-                pc1.addStream(localstream);
-                trace("Adding Local Stream to peer connection");
+	// initialize skin if requested
+	$app->initSkin( (bool) $app->wg->Request->getVal( "skin", false ) );
 
-                pc1.createOffer(gotDescription1);
-            }
+	$response = $app->sendRequest( null, null, null, false );
 
-            function gotDescription1(desc){
-                pc1.setLocalDescription(desc);
-                trace("Offer from pc1 \n" + desc.sdp);
-                pc2.setRemoteDescription(desc);
-                pc2.createAnswer(gotDescription2);
-            }
+	// commit any open transactions just in case the controller forgot to
+	$app->commit();
 
-            function gotDescription2(desc){
-                pc2.setLocalDescription(desc);
-                trace("Answer from pc2 \n" + desc.sdp);
-                pc1.setRemoteDescription(desc);
-            }
+	//if cache policy wasn't explicitly set (e.g. WikiaResponse::setCacheValidity)
+	//then force no cache to reflect api.php default behavior
+	$cacheControl = $response->getHeader( 'Cache-Control' );
 
-            function hangup() {
-                trace("Ending call");
-                pc1.close();
-                pc2.close();
-                pc1 = null;
-                pc2 = null;
-                btn3.disabled = true;
-                btn2.disabled = false;
-            }
+	if ( empty( $cacheControl ) ) {
+		$response->setHeader( 'Cache-Control', 'private', true );
+	}
 
-            function gotRemoteStream(e){
-                vid2.src = webkitURL.createObjectURL(e.stream);
-                trace("Received remote stream");
-            }
+	$response->sendHeaders();
+	$response->render();
 
-            function iceCallback1(event){
-                if (event.candidate) {
-                    pc2.addIceCandidate(new RTCIceCandidate(event.candidate));
-                    trace("Local ICE candidate: \n" + event.candidate.candidate);
-                }
-            }
+	wfLogProfilingData();
 
-            function iceCallback2(event){
-                if (event.candidate) {
-                    pc1.addIceCandidate(new RTCIceCandidate(event.candidate));
-                    trace("Remote ICE candidate: \n " + event.candidate.candidate);
-                }
-            }
-        </script>
-</body>
-</html>
-
-
+} else {
+	header( "HTTP/1.1 503 Service Unavailable", true, 503 );
+}
