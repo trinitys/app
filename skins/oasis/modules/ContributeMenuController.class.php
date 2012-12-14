@@ -3,6 +3,10 @@
 class ContributeMenuController extends WikiaController {
 
 	public function executeIndex() {
+		if ( !empty( $this->wg->EnableTray ) ) {
+			$this->skipRendering();
+		}
+	
 		// add "edit this page" item
 		$dropdownItems = array();
 		$content_actions = $this->app->getSkinTemplateObj()->data['content_actions'];

@@ -277,6 +277,8 @@ class WikiaSearchController extends WikiaSpecialPageController {
 	    $searchConfig 	= F::build		('WikiaSearchConfig');
 	    $searchConfig	->setQuery		( $query );
 	    $responseData 	= $this->wikiaSearch->getTray( $searchConfig )->toNestedArray();
+	    var_dump($responseData);
+	    die();
 	    $this->response	->setData		( $responseData );
 	    $this->response	->setFormat		( 'json' );
 	}

@@ -411,7 +411,7 @@ class WikiaSearch extends WikiaObject {
 					 ->setGroupingType( 'query' );
 		
 		$query->getGrouping()
-			  ->setLimit( 4 )
+			  ->setLimit( 5 )
 			  ->setQueries( array_values($queries) );
 		
 		try {

@@ -1,6 +1,7 @@
 <div id="WikiaTrayHeader" class="WikiaTrayHeader">
 	<div class="tray-header-tab user-tab">
-		<?= $profileAvatar ?>
+		<img src="/extensions/wikia/hacks/Tray/images/christian.jpg" class="avatar">
+		<span class="reddot">2</span>
 	</div>
 	<div class="divider"></div>
 	<div class="tray-header-tab search-tab">
@@ -14,17 +15,34 @@
 		<h1>Muppet Wiki Articles</h1>
 		<ul class="wiki-matches">
 		</ul>
+
 		<h1>Articles on all the Wikia</h1>
-		<ul>
-			<li><a href="#">Article 1</a></li>
-			<li><a href="#">Article 2</a></li>
-			<li><a href="#">Article 3</a></li>
-			<li><a href="#">Article 4</a></li>
-			<li><a href="#">Article 5</a></li>
+		<ul class="wikia-matches">
 		</ul>
 
+		<h1>Photos</h1>
+		<div class="photo-carousel-wrapper">
+			<div class="previous"></div>
+			<div class="next"></div>
+			<div class="photo-carousel">
+				<div>
+					<ul class="carousel">
+						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
+						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
+						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
+						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
+						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
+						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
+						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
+						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
+					</ul>
+				</div>
+			</div>		
+		</div>
+		
 		<!-- Templates -->
 		<script type="text/template" id="WikiaTray-wiki-match"><li><a href="{{href}}">{{name}}</a></li></script>
+		<script type="text/template" id="WikiaTray-wikia-match"><li><a href="{{href}}">{{name}}</a><span class="wiki">{{wiki}}</span></li></script>
 	</section>
 	<section class="user">
 		<h1>BladeBronson</h1>

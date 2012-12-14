@@ -1,4 +1,5 @@
 @import "skins/oasis/css/core/layout";
+@import "skins/oasis/css/mixins/border-radius";
 
 .tray-open {
 	overflow: hidden;
@@ -14,13 +15,31 @@
 	.tray-header-tab {
 		float: left;
 		height: 37px;
+		position: relative;
 		&.selected {
 			background: -webkit-gradient( linear, 0% 0%, 0% 100%, color-stop( 0%, black ), color-stop( 75%, transparent) )
 		}
 	}
 
-	.search-tab {
-		width: 253px;
+	.avatar {
+		cursor: pointer;
+		margin: 5px 9px 0 10px;
+	}
+	.reddot {
+		@include border-radius(15px);
+		background: red;
+		border: 1px solid white;
+		box-shadow: 0px 0px 2px white;
+		color: white;
+		display: block;
+		font-size: 10px;
+		height: 12px;
+		min-width: 8px;
+		padding: 0 2px;
+		position: absolute;
+		text-align: center;
+		top: 0;
+		right: 2px;
 	}
 
 	.divider {
@@ -33,10 +52,9 @@
 		width: 0;
 	}
 
-	.avatar {
-		margin: 5px 9px 0 10px;
+	.search-tab {
+		width: 253px;
 	}
-
 	input[type="search"] {
 		font-size: large;
 		margin: 7px 0 0 9px;
@@ -66,7 +84,66 @@
 	ul {
 		margin-left: 20px;
 	}
+	li {
+		margin: 6px 0;
+	}
 	a {
 		color: #EEE;
 	}
+	.wiki {
+		color: #696;
+		display: block;
+		font-size: 10px;
+		margin-top: -1px;
+		text-shadow: 0 -1px 0 rgba(0, 0, 0, .5);
+	}
+	
+	.photo-carousel-wrapper {
+		position: relative;
+		
+		.photo-carousel	{
+			>div {
+				margin: 0 10px;
+				overflow: hidden;
+				width: 259px;
+			}
+			ul {
+				margin: 0 0 0 -1px;
+				position: relative;
+			}
+			li {
+				border-right: 1px solid rgba(0,0,0,.3);
+				border-left: 1px solid rgba(255,255,255,.1);
+				float: left;
+				padding: 3px 9px;
+			}
+			img {
+				border: 1px solid white;
+				display: block;
+				height: 65px;
+				width: 65px;			
+			}
+		}
+		.next, .previous {
+			border-style: solid;
+			cursor: pointer;
+			position: absolute;
+			top: 35px;			
+			width: 0;
+		}
+		.next {
+			border-color: transparent transparent transparent white;
+			border-width: 9px 0 9px 9px;
+			right: 0;
+		}
+		.previous {
+			border-color: transparent white transparent transparent;
+			border-width: 9px 9px 9px 0;
+			left: 0;
+		}
+		.disabled {
+			opacity: .25;
+		}
+	}
+	
 }

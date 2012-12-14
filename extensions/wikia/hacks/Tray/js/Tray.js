@@ -4,13 +4,14 @@ var WikiaTray = {
 	open: false,
 	selected: null,
 	speed: 250,
+	xhr: null,
 	$search: $('#WikiaTrayHeader input[type="search"]'),
 	$avatar: $('#WikiaTrayHeader .avatar'),
 
 	// Methods
 	init: function() {
 		// Bindings
-		this.$search.on( 'input', $.proxy( this.searchChange, this ) );
+		this.$search.on( 'input', $.throttle( 150, $.proxy( this.searchChange, this ) ) );
 		this.$avatar.on( 'click', $.proxy( this.avatarClick, this ) );
 	},
 
@@ -26,30 +27,64 @@ var WikiaTray = {
 		$.when(
 			$.loadMustache()
 		).done(function() {
+			if (WikiaTray.xhr && WikiaTray.xhr.readyState != 4) {
+				WikiaTray.xhr.abort();
+			}
 
-			$.ajax({
-				url: wgServer + wgScript + '?action=ajax&rs=getLinkSuggest&format=json',
+			WikiaTray.xhr = $.ajax({
+				url: wgServer + '/wikia.php?controller=WikiaSearch&method=getTray',
 				data: {
-					query: WikiaTray.$search.val()
+					q: WikiaTray.$search.val()
 				},
 				success: function( data ) {
-					if ( data.suggestions.length ) {
-						var list = $('#WikiaTray .wiki-matches');
+					var list;
+					console.log(data);
 
-						console.log('opening');
-						WikiaTray.openTray('search');
+					WikiaTray.openTray('search');
 
-						list.empty();
-						$.each( data.suggestions, function(index, value) {
-							list.append( $('#WikiaTray-wiki-match').mustache({
-								name: value,
-								href: mw.config.values.wgArticlePath.replace('$1', value)
-							}) );
-						});
-					} else {
-						console.log('closing');
-						WikiaTray.closeTray();
-					}
+					// this wiki
+
+					list = $('#WikiaTray .wiki-matches').empty();
+
+					$.each( data.default, function( index, value ) {
+						//console.log('logging each', value.url);
+						var url = value.url;
+						var name = decodeURI(url);
+						name = name.substr(url.lastIndexOf('/') + 1);
+						name = name.replace(/_/g, ' ');
+						console.log(url, ' - ', name);
+
+						list.append( $('#WikiaTray-wiki-match').mustache({
+							name: name,
+							href: url
+						}) );
+					});
+
+
+					// All the wikia
+
+					list = $('#WikiaTray .wikia-matches').empty();
+
+					$.each( data['cross-wiki'], function( index, value ) {
+						//console.log('logging each', value.url);
+						var url = value.url;
+						var name = decodeURI(url);
+						name = name.substr(url.lastIndexOf('/') + 1);
+						name = name.replace(/_/g, ' ');
+						var wiki = url.substring( url.indexOf('//') + 2, url.indexOf('/', url.indexOf('//') + 2) );
+						
+						console.log(wiki);
+						
+						list.append( $('#WikiaTray-wikia-match').mustache({
+							name: name,
+							href: url,
+							wiki: wiki
+						}) );
+					});
+
+					// Photo slider
+					$('#WikiaTray .photo-carousel').carousel();
+
 				}
 			});
 
