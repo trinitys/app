@@ -406,6 +406,17 @@ abstract class CodeLint {
 		return $results;
 	}
 
+	/*
+	 * method executed after checking a directory
+ 	 * @param string $directoryName directory to be checked
+	 * @param array $blacklist list of patterns to match against files in directory / subdirectories
+	 * @return array list of reported warnings
+	 */
+	public function afterCheckDirectory($directoryName, $blacklist = array()) {
+		$results = array();
+		return $results;
+	}
+
 	/**
 	 * Check given list of directories and return list of warnings
 	 *
@@ -420,6 +431,7 @@ abstract class CodeLint {
 		foreach($directoryNames as $directoryName) {
 			if (!$this->isBlacklisted($directoryName, $blacklist)) {
 				$results += $this->checkDirectory($directoryName, $blacklist);
+				$results += $this->afterCheckDirectory($directoryName, $blacklist);
 			}
 		}
 

@@ -7,6 +7,12 @@
  *
  * Usage example:
  * SERVER_ID=1 php /usr/wikia/source/wiki/maintenance/wikia/codelint.php --conf=/usr/wikia/docroot/wiki.factory/LocalSettings.php --mode=messages --dir=/usr/wikia/source/wiki/extensions/wikia/CodeLint/
+ *
+ * Todo:
+ * - enable omitting lines from message file from checks (unused/undocumented messages)
+ * - enable omitting lines from php / js files from checks (non-existent messages)
+ * - record full usage stats to blame for nonexistent messages
+ *
  */
 
 class CodeLintMessages extends CodeLint {
@@ -17,8 +23,9 @@ class CodeLintMessages extends CodeLint {
 	const ERROR_WHITESPACES_AT_BEGINNING = 4;
 	const ERROR_WHITESPACES_AT_END = 8;
 	const ERROR_UNUSED_MESSAGE = 16;
+	const ERROR_UNDEFINED_MESSAGE = 32;
 
-	const MESSAGE_USAGE_CACHE_BASE = '/tmp/message-usage-cache';
+	const MESSAGE_USAGE_CACHE_PREFIX = '/tmp/message-usage-cache-';
 
 	// file name pattern - used when linting directories
 	protected $filePattern = '*.i18n.php';
@@ -27,7 +34,15 @@ class CodeLintMessages extends CodeLint {
 
 	// typical message calls in php files
 	protected $phpMesageUsagePatterns = array(
-		'#((\$app|F::app\(\)|\$this)->wf->[m|M]sg[ForContent|Ext]?\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((\$this->wf->[m|M]sg)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((\$app->wf->[m|M]sg)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((F::app\(\)->wf->[m|M]sg)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((\$this->wf->[m|M]sgForContent)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((\$app->wf->[m|M]sgForContent)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((F::app\(\)->wf->[m|M]sgForContent)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((\$this->wf->[m|M]sgExt)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((\$app->wf->[m|M]sgExt)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((F::app\(\)->wf->[m|M]sgExt)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
 		'#((wfMsg|wfMsgForContent|wfMsgExt)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
 	);
 
@@ -43,6 +58,8 @@ class CodeLintMessages extends CodeLint {
 	protected $currentDir = null;
 
 	protected $usageList = array();
+
+	protected $definedMessages = array();
 
 
 	public function __construct() {
@@ -75,14 +92,14 @@ class CodeLintMessages extends CodeLint {
 	}
 
 	protected function loadListFromCache($directory) {
-		$cacheFile = self::MESSAGE_USAGE_CACHE_BASE . sha1($directory);
+		$cacheFile = self::MESSAGE_USAGE_CACHE_PREFIX . sha1($directory);
 		if (file_exists($cacheFile) && filemtime($cacheFile) > time() - 1 * 60 * 60) {
 			$this->usageList[$directory] = unserialize(file_get_contents($cacheFile));
 		}
 	}
 
 	protected function saveListToCache($directory, $data) {
-		$cacheFile = self::MESSAGE_USAGE_CACHE_BASE . sha1($directory);
+		$cacheFile = self::MESSAGE_USAGE_CACHE_PREFIX . sha1($directory);
 		file_put_contents($cacheFile, serialize($data));
 	}
 
@@ -190,6 +207,7 @@ class CodeLintMessages extends CodeLint {
 		$errorcount = array();
 		foreach ($messages as $lang => $messageList) {
 			foreach ($messageList as $messageKey => $messageBody) {
+				$this->addToDefinedMessages($messageKey);
 				if (empty($errorcount[$messageKey])) {
 					$errorcount[$messageKey] = array(
 						self::ERROR_NONEXISTENT_DOCUMENTATION => 0,
@@ -213,6 +231,43 @@ class CodeLintMessages extends CodeLint {
 		return array(
 			'errors' => $errors,
 			'time' => round(microtime(true) - $startTime, 4)
+		);
+	}
+
+	public function afterCheckDirectory($directoryName, $blacklist = array()) {
+		$errors = array();
+		$startTime = microtime(true);
+
+		$definedMessages = array_keys($this->definedMessages);
+		foreach ($this->usageList as $directory => $messages) {
+			foreach ($messages as $messageKey) {
+				$errorcount[$messageKey][self::ERROR_UNDEFINED_MESSAGE] = 0;
+				if (!in_array($messageKey, $definedMessages)) {
+					$errors [] = array(
+						'type' => self::ERROR_UNDEFINED_MESSAGE,
+						'error' => 'Message ' . $messageKey . ' is not defined',
+						'raw' => "Message '{a}' is not defined",
+						'isImportant' => true,
+						'lines' => array(),
+						'blame' => array(
+							'author' => '?',
+							'rev' => '?',
+						),
+						'a' => $messageKey
+					);
+				}
+			}
+		}
+
+		return array(
+			realpath($directoryName) => array(
+				'errors' => $errors,
+				'errorsCount' => count($errors),
+				'importantErrorsCount' => count($errors),
+				'time' => round(microtime(true) - $startTime, 4),
+				'lines' => '?',
+				'fileChecked' => realpath($directoryName)
+			)
 		);
 	}
 
@@ -266,14 +321,17 @@ class CodeLintMessages extends CodeLint {
 
 	protected function findLineWith($messageKey, &$errorcount) {
 		$lineCount = 0;
-		// todo: cache not to repeat from start on each loop
-		foreach ($this->currentFile as $lineNum => $lineContent) {
-			if (mb_strpos($lineContent, $messageKey) !== false) {
-				if ($lineCount < $errorcount) {
-					$lineCount++;
-				} else {
-					$errorcount++;
-					return $lineNum;
+
+		if ($this->currentFile) {
+			// todo: cache not to repeat from start on each loop
+			foreach ($this->currentFile as $lineNum => $lineContent) {
+				if (mb_strpos($lineContent, $messageKey) !== false) {
+					if ($lineCount < $errorcount) {
+						$lineCount++;
+					} else {
+						$errorcount++;
+						return $lineNum;
+					}
 				}
 			}
 		}
@@ -322,5 +380,11 @@ class CodeLintMessages extends CodeLint {
 
 		wfProfileOut(__METHOD__);
 		return false;
+	}
+
+	protected function addToDefinedMessages($messageKey) {
+		if (!isset($this->definedMessages[$messageKey])) {
+			$this->definedMessages[$messageKey] = true;
+		}
 	}
 }
