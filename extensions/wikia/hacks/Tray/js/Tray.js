@@ -38,7 +38,6 @@ var WikiaTray = {
 				},
 				success: function( data ) {
 					var list;
-					console.log(data);
 
 					WikiaTray.openTray('search');
 
@@ -47,12 +46,10 @@ var WikiaTray = {
 					list = $('#WikiaTray .wiki-matches').empty();
 
 					$.each( data.default, function( index, value ) {
-						//console.log('logging each', value.url);
 						var url = value.url;
 						var name = decodeURI(url);
 						name = name.substr(url.lastIndexOf('/') + 1);
 						name = name.replace(/_/g, ' ');
-						console.log(url, ' - ', name);
 
 						list.append( $('#WikiaTray-wiki-match').mustache({
 							name: name,
@@ -66,14 +63,11 @@ var WikiaTray = {
 					list = $('#WikiaTray .wikia-matches').empty();
 
 					$.each( data['cross-wiki'], function( index, value ) {
-						//console.log('logging each', value.url);
 						var url = value.url;
 						var name = decodeURI(url);
 						name = name.substr(url.lastIndexOf('/') + 1);
 						name = name.replace(/_/g, ' ');
 						var wiki = url.substring( url.indexOf('//') + 2, url.indexOf('/', url.indexOf('//') + 2) );
-						
-						console.log(wiki);
 						
 						list.append( $('#WikiaTray-wikia-match').mustache({
 							name: name,
@@ -83,6 +77,15 @@ var WikiaTray = {
 					});
 
 					// Photo slider
+					list = $('#WikiaTray .carousel').empty();
+
+					$.each( data['images'], function( index, value ) {
+						var url = value.thumbnail.src;
+						list.append( $('#WikiaTray-photos').mustache({
+							url: url
+						}) );
+					});
+					
 					$('#WikiaTray .photo-carousel').carousel();
 
 				}

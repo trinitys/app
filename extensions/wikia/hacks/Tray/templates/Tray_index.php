@@ -27,14 +27,6 @@
 			<div class="photo-carousel">
 				<div>
 					<ul class="carousel">
-						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
-						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
-						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
-						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
-						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
-						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
-						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
-						<li><img src="/extensions/wikia/hacks/Tray/images/christian.jpg"></li>
 					</ul>
 				</div>
 			</div>		
@@ -43,6 +35,7 @@
 		<!-- Templates -->
 		<script type="text/template" id="WikiaTray-wiki-match"><li><a href="{{href}}">{{name}}</a></li></script>
 		<script type="text/template" id="WikiaTray-wikia-match"><li><a href="{{href}}">{{name}}</a><span class="wiki">{{wiki}}</span></li></script>
+		<script type="text/template" id="WikiaTray-photos"><li><img src="{{url}}"></li></script>
 	</section>
 	<section class="user">
 		<h1>BladeBronson</h1>
