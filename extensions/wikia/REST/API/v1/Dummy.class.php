@@ -7,15 +7,15 @@ class Dummy extends \REST\base\Resource
 	\REST\base\Updatable,
 	\REST\base\Deletable {
 	public function read( $a = 1, $b = 1, $c = 1 ) {
-		$total = $a * $b;
-		$total -= $c;
+		$total = (int) $a * (int) $b;
+		$total -= (int) $c;
 
 		return "({$a} x {$b}) - {$c} = {$total}, Yo!";
 	}
 
 	public function create( $a = 1, $b = 1, $c = 1 ) {
-		$total = $a / $b;
-		$total += $c;
+		$total = (int) $a / (int) $b;
+		$total += (float) $c;
 
 		return "({$a} / {$b}) + {$c} = {$total}, Duh!";
 	}
