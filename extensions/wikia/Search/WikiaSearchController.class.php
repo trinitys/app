@@ -283,9 +283,10 @@ class WikiaSearchController extends WikiaSpecialPageController {
 	    	$id = $resultGrouping->getId();
 	    	$responseData[$id] = array();
 	    	foreach ( $resultGrouping as $result ) {
-    			$responseData[$id][$result['id']] = $result->toArray( array( 'id', 'wikititle', WikiaSearch::field( 'title' ), 'url' ) );
-		    	if ( $id == 'images' ) { 
-		    		$responseData[$id][$result['id']]['thumbnail'] = $result->getThumbnail( true );
+    			$responseData[$id][$result['id']] = $result->toArray( array( 'id', WikiaSearch::field( 'title' ), 'url' ) );
+    			$responseData[$id][$result['id']]['wikititle'] = WikiFactory::getVarValueByName( 'wgSiteName', $result['wid'] );
+		    	if ( $id == 'images' || $id == 'videos'  ) {
+		    		$responseData[$id][$result['id']]['thumbnail'] = $result->getThumbnail( $id !== 'videos' );
 		    	}
     		}
 	    }

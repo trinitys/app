@@ -390,14 +390,14 @@ class WikiaSearch extends WikiaObject {
 		$query = $this->client->createSelect();
 		$query->setDocumentClass( 'WikiaSearchResult' );
 		
-		$searchConfig->setRequestedFields( array( 'id', 'wid', 'url', 'wikititle', self::field( 'title' ) ) );
+		$searchConfig->setRequestedFields( array( 'id', 'wid', 'url', self::field( 'title' ) ) );
 		
 		$query	->addFields		( $searchConfig->getRequestedFields() )
 				->removeField	('*')
 			  	->setStart		( $searchConfig->getStart() )
 				->setRows		( $searchConfig->getLength() )
 				->addParam		( 'timeAllowed', 1000 )
-				->setQuery		( 'title:' . $searchConfig->getQueryNoQuotes( true ) . '*' )
+				->setQuery		( self::field( 'title' ) . ':' . $searchConfig->getQueryNoQuotes( true ) . '*' )
 		;
 		$queries = array(
 				'default'		=> self::valueForField( 'wid', $this->wg->CityId ) . ' AND '. self::valueForField( 'ns', '0' ),
@@ -416,7 +416,7 @@ class WikiaSearch extends WikiaObject {
 		
 		try {
 			$result = $this->client->select( $query );
-		} catch ( Exception $e ) {echo $e; die;
+		} catch ( Exception $e ) {
 			F::build('Wikia')->log(__METHOD__, 'Querying Solr First Time', $e);
 			$searchConfig->setError( $e );
 			$result = F::build('Solarium_Result_Select_Empty');
