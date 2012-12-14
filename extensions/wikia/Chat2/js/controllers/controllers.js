@@ -1,4 +1,44 @@
 
+
+var RTCPeerConnection = null;
+var getUserMedia = null;
+var attachMediaStream = null;
+
+if (navigator.mozGetUserMedia) {
+	console.log("This appears to be Firefox");
+
+	// The RTCPeerConnection object.
+	RTCPeerConnection = mozRTCPeerConnection;
+
+	// Get UserMedia (only difference is the prefix).
+	// Code from Adam Barth.
+	getUserMedia = navigator.mozGetUserMedia.bind(navigator);
+
+	// Attach a media stream to an element.
+	attachMediaStream = function(element, stream) {
+		console.log("Attaching media stream");
+		element.mozSrcObject = stream;
+		element.play();
+	};
+} else if (navigator.webkitGetUserMedia) {
+	console.log("This appears to be Chrome");
+
+	// The RTCPeerConnection object.
+	RTCPeerConnection = webkitRTCPeerConnection;
+
+	// Get UserMedia (only difference is the prefix).
+	// Code from Adam Barth.
+	getUserMedia = navigator.webkitGetUserMedia.bind(navigator);
+
+	// Attach a media stream to an element.
+	attachMediaStream = function(element, stream) {
+		element.src = webkitURL.createObjectURL(stream);
+	};
+} else {
+	console.log("Browser does not appear to be WebRTC-capable");
+}
+
+
 //
 //Controllers
 //
@@ -646,148 +686,177 @@ var NodeChatController = $.createClass(NodeRoomController,{
 
 		var socket = this.socket;
 
+
 		console.log("XXXXXXXXXXXXXXXXXXXXXXX");
 		
-		var btn1 = $('#btn1').on('click', start)[0];
-		var btn2 = $('#btn2').on('click', call)[0];
-		var btn3 = $('#btn3').on('click', hangup)[0];
+		var btn1 = $('#btn1').on('click', createPeerConnection);
+		var btn2 = $('#btn2').on('click', doCall);
+//		var btn3 = $('#btn3').on('click', hangup);
 
 
-		var vid1 = document.getElementById("vid1");
-		var vid2 = document.getElementById("vid2");
-		
-		btn1.disabled = false;
-		btn2.disabled = true;
-		btn3.disabled = true;
-		var pc1,pc2;
-		var localstream;
-		
-		function trace(text) {
-			// This function is used for logging.
-			if (text[text.length - 1] == '\n') {
-			text = text.substring(0, text.length - 1);
+		console.log("This appears to be Chrome");
+
+
+		var localVideo = document.getElementById("vid1");
+		var remoteVideo = document.getElementById("vid2");
+		var localStream;
+		var remoteStream;
+		var channel;
+		var channelReady = false;
+
+
+		var mediaConstraints = {'mandatory': {
+			'OfferToReceiveAudio':true,
+			'OfferToReceiveVideo':true }};
+
+		//START MEDIA
+
+		function doGetUserMedia() {
+			// Call into getUserMedia via the polyfill (adapter.js).
+			var constraints = {"mandatory": {}, "optional": []};
+			try {
+				getUserMedia({'audio':true, 'video':constraints}, onUserMediaSuccess,
+					onUserMediaError);
+				console.log("Requested access to local media with mediaConstraints:\n" +
+					"  \"" + JSON.stringify(constraints) + "\"");
+			} catch (e) {
+				alert("getUserMedia() failed. Is this a WebRTC capable browser?");
+				console.log("getUserMedia failed with exception: " + e.message);
 			}
-			console.log( text);
 		}
-		
-		function gotStream(stream){
-			trace("Received local stream");
-			vid1.src = webkitURL.createObjectURL(stream);
-			localstream = stream;
-			btn2.disabled = false;
-		}
-		
-		function start() {
-			trace("Requesting local stream");
-			btn1.disabled = true;
-			navigator.webkitGetUserMedia({audio:true, video:true},
-				gotStream, function() {});
 
+		function onUserMediaSuccess(stream) {
+			console.log("User has granted access to local media.");
+			// Call the polyfill wrapper to attach the media stream to this element.
+			attachMediaStream(localVideo, stream);
+			localStream = stream;
+			// Caller creates PeerConnection.
 		}
-		
-		function call() {
-			btn2.disabled = true;
-			btn3.disabled = false;
-			trace("Starting call");
-			if (localstream.videoTracks.length > 0) {
-				trace('Using Video device: ' + localstream.videoTracks[0].label);
+
+		function onUserMediaError(error) {
+			console.log("Failed to get access to local media. Error code was " + error.code);
+			alert("Failed to get access to local media. Error code was " + error.code + ".");
+		}
+
+		//END MEDIA
+
+
+		//START CONENCTION
+
+		function createPeerConnection() {
+			var pc_config = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
+			try {
+				// Create an RTCPeerConnection via the polyfill (adapter.js).
+				pc = new RTCPeerConnection(pc_config);
+				pc.onicecandidate = onIceCandidate;
+				console.log("Created RTCPeerConnnection with config:\n" + "  \"" +
+					JSON.stringify(pc_config) + "\".");
+			} catch (e) {
+				console.log("Failed to create PeerConnection, exception: " + e.message);
+				alert("Cannot create RTCPeerConnection object; WebRTC is not supported by this browser.");
+				return;
 			}
-			if (localstream.audioTracks.length > 0) {
-				trace('Using Audio device: ' + localstream.audioTracks[0].label);
+
+			pc.onconnecting = onSessionConnecting;
+			pc.onopen = onSessionOpened;
+			pc.onaddstream = onRemoteStreamAdded;
+			pc.onremovestream = onRemoteStreamRemoved;
+
+			pc.addStream(localStream);
+
+		}
+
+		function onIceCandidate(event) {
+			if (event.candidate) {
+				sendMsg({type: 'candidate',
+					label: event.candidate.sdpMLineIndex,
+					id: event.candidate.sdpMid,
+					candidate: event.candidate.candidate});
+			} else {
+				console.log("End of candidates.");
 			}
-			
-			var servers = null;
-			pc1 = new webkitRTCPeerConnection(servers);
-			trace("Created local peer connection object pc1");
-			pc1.onicecandidate = iceCallback1;
-			pc2 = new webkitRTCPeerConnection(servers);
-			trace("Created remote peer connection object pc2");
-			pc2.onicecandidate = iceCallback2;
-			pc2.onaddstream = gotRemoteStream;
-			
-			pc1.addStream(localstream);
-			trace("Adding Local Stream to peer connection");
-			
-			pc1.createOffer(gotDescription1);
-		}
-		
-		function gotDescription1(desc){
-			pc1.setLocalDescription(desc);
-
-
-
-			trace("Offer from pc1 \n" + desc.sdp);
-			sendOffer(desc);
-			//pc2.setRemoteDescription(desc);
-			//pc2.createAnswer(gotDescription2);
 		}
 
-		function sendOffer(desc) {
+		function onSessionConnecting(message) {
+			console.log("Session connecting.");
+		}
+		function onSessionOpened(message) {
+			console.log("Session opened.");
+		}
+
+		function onRemoteStreamAdded(event) {
+			console.log("Remote stream added.");
+			attachMediaStream(remoteVideo, event.stream);
+			remoteStream = event.stream;
+		//	waitForRemoteVideo();
+		}
+
+		function onRemoteStreamRemoved(event) {
+			console.log("Remote stream removed.");
+		}
+
+		//END CONENCTION
+
+
+		//hand shake
+
+		function doCall() {
+			console.log("Sending offer to peer.");
+			pc.createOffer(setLocalAndSendMessage, null, mediaConstraints);
+		}
+
+		function doAnswer() {
+			console.log("Sending answer to peer.");
+			pc.createAnswer(setLocalAndSendMessage, null, mediaConstraints);
+		}
+
+		function setLocalAndSendMessage(sessionDescription) {
+			// Set Opus as the preferred codec in SDP if Opus is present.
+//			sessionDescription.sdp = preferOpus(sessionDescription.sdp);
+			pc.setLocalDescription(sessionDescription);
+			sendMsg(sessionDescription);
+		}
+
+		//end hand shake
+
+		socket.bind('setstatus', function(event) {
+			$().log(event.data);
+			var setStatusCommand = new models.SetStatusCommand();
+			setStatusCommand.mport(event.data);
+
+			var rtcObj = $.parseJSON(setStatusCommand.get('statusMessage'));
+
+			if(rtcObj.name == wgUserName) {
+				$().log('IGNORE');
+				return true;
+			}
+
+			var msg = rtcObj.msg;
+			if (msg.type === 'offer') {
+				pc.setRemoteDescription(new RTCSessionDescription(msg));
+				doAnswer();
+			} else if (msg.type === 'answer' ) {
+				pc.setRemoteDescription(new RTCSessionDescription(msg));
+			} else if (msg.type === 'candidate' ) {
+				var candidate = new RTCIceCandidate({sdpMLineIndex:msg.label,
+					candidate:msg.candidate});
+				pc.addIceCandidate(candidate);
+			} else if (msg.type === 'bye') {
+				onRemoteHangup();
+			}
+		});
+
+		function sendMsg(msg) {
 			var setStatusCommand = new models.SetStatusCommand({
 				statusState: STATUS_STATE_AWAY,
-				statusMessage: 'no sens'
+				statusMessage: $.toJSON({ name: wgUserName, 'msg': msg  })
 			});
 			socket.send(setStatusCommand.xport());
-
-			$().log(desc);
-			var sdp = desc.sdp;
-			var desc2 = new RTCSessionDescription({type:"offer", sdp:sdp});
-
-			receiveOffer(desc2);
-		}
-
-		function receiveOffer(desc) {
-			pc2.setRemoteDescription(desc);
-			pc2.createAnswer(gotDescription2);
 		}
 
 
-		function sendAnswer(desc) {
-			receiveAnswer(desc);
-		}
+		doGetUserMedia();
 
-		function receiveAnswer(desc) {
-			pc1.setRemoteDescription(desc);
-		}
-
-		function gotDescription2(desc){
-			pc2.setLocalDescription(desc);
-			trace("Answer from pc2 \n" + desc.sdp);
-			sendAnswer(desc);
-		}
-		
-		function hangup() {
-			trace("Ending call");
-			pc1.close();
-			pc2.close();
-			pc1 = null;
-			pc2 = null;
-			btn3.disabled = true;
-			btn2.disabled = false;
-			vid2.src = "";
-		}
-		
-		function gotRemoteStream(e){
-			vid2.src = webkitURL.createObjectURL(e.stream);
-			trace("Received remote stream");
-		}
-		
-		function iceCallback1(event){
-			if (event.candidate) {
-				pc2.addIceCandidate(new RTCIceCandidate(event.candidate));
-				trace("Local ICE candidate: \n" + event.candidate.candidate);
-			}
-		}
-		
-		function iceCallback2(event){
-			if (event.candidate) {
-				pc1.addIceCandidate(new RTCIceCandidate(event.candidate));
-				trace("Remote ICE candidate: \n " + event.candidate.candidate);
-			}
-		}
-
-
-		
 		return true;
 	},
 
