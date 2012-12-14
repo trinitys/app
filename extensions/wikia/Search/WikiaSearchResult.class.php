@@ -10,6 +10,11 @@ class WikiaSearchResult extends Solarium_Document_ReadWrite {
 	protected $titleObject;
 	protected $thumbnailObject;
 	
+	/**
+	 * For hackathon
+	 * @var int
+	 */
+	const TRAY_THUMB_SIZE = 65;
 
 	/**
 	 * Backwards compatibility, since Solarium_Document_ReadWrite instances have array access.
@@ -185,7 +190,11 @@ class WikiaSearchResult extends Solarium_Document_ReadWrite {
 	 * @see    WikiaSearchTest::testGetThumbnail
 	 * @return MediaTransformOutput|null (i think?)
 	 */
-	public function getThumbnail() {
+	public function getThumbnail( $useImageService = false ) {
+		if ( $useImageService ) {
+			$widAndPageId = explode( '_', $this['id'] );
+			return ImagesService::getImageSrc( $widAndPageId[0], $widAndPageId[1], self::TRAY_THUMB_SIZE );
+		}
 		if ( (! isset( $this->thumbnailObject ) ) && ( $this['ns'] == NS_FILE ) ) {
 			$img = F::app()->wf->FindFile( $this->getTitleObject() );
 			if (! empty( $img ) ) {

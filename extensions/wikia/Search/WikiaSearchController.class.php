@@ -276,9 +276,19 @@ class WikiaSearchController extends WikiaSpecialPageController {
 	    }
 	    $searchConfig 	= F::build		('WikiaSearchConfig');
 	    $searchConfig	->setQuery		( $query );
-	    $responseData 	= $this->wikiaSearch->getTray( $searchConfig )->toNestedArray();
-	    var_dump($responseData);
-	    die();
+	    $resultSet		= $this->wikiaSearch->getTray( $searchConfig );
+	    
+	    $responseData = array();
+	    foreach ( $resultSet as $resultGrouping ) {
+	    	$id = $resultGrouping->getId();
+	    	$responseData[$id] = array();
+	    	foreach ( $resultGrouping as $result ) {
+    			$responseData[$id][$result['id']] = $result->toArray( array( 'id', 'wikititle', WikiaSearch::field( 'title' ), 'url' ) );
+		    	if ( $id == 'images' ) { 
+		    		$responseData[$id][$result['id']]['thumbnail'] = $result->getThumbnail( true );
+		    	}
+    		}
+	    }
 	    $this->response	->setData		( $responseData );
 	    $this->response	->setFormat		( 'json' );
 	}
