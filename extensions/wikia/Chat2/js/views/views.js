@@ -392,7 +392,7 @@ var NodeChatDiscussion = Backbone.View.extend({
 	startVideoChat: function () {
 
 		
-		this.chatDiv.html('<div class="VideoChat"><video id="vid2" autoplay></video><video id="vid1" autoplay></video><br><button id="btn1">Start</button><button id="btn2">Call</button><button id="btn3">Hang Up</button></div>');
+		this.chatDiv.html('<div class="VideoChat"><video id="vid2" autoplay></video><video id="vid1" autoplay></video></div>');
 
 	}
 });
