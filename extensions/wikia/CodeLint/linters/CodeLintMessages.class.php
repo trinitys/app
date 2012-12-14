@@ -86,7 +86,7 @@ class CodeLintMessages extends CodeLint {
 		if (empty($this->usageList[$extDir])) {
 			$this->buildUsageList($extDir);
 			if (!empty($this->usageList[$extDir])) {
-				$this->saveListToCache($extDir, $this->usageList[$extDir]);
+				//$this->saveListToCache($extDir, $this->usageList[$extDir]);
 			}
 		}
 	}
@@ -94,7 +94,7 @@ class CodeLintMessages extends CodeLint {
 	protected function loadListFromCache($directory) {
 		$cacheFile = self::MESSAGE_USAGE_CACHE_PREFIX . sha1($directory);
 		if (file_exists($cacheFile) && filemtime($cacheFile) > time() - 1 * 60 * 60) {
-			$this->usageList[$directory] = unserialize(file_get_contents($cacheFile));
+			//$this->usageList[$directory] = unserialize(file_get_contents($cacheFile));
 		}
 	}
 
@@ -121,28 +121,36 @@ class CodeLintMessages extends CodeLint {
 		$this->filterOutFilesNotToScan($phpFiles);
 
 		foreach ($jsFiles as $file) {
-			$fileContents = file_get_contents($file);
+			$fileContents = file($file);
 			echo $file;
 
 			foreach ($this->jsMessageUsagePatterns as $pattern) {
-				$matches = array();
-				$match = preg_match_all($pattern, $fileContents, $matches);
+				$matches = preg_grep($pattern, $fileContents);
+
+				foreach($matches as $lineNum => &$match) {
+					preg_match($pattern, $match, $additionalMatches);
+					$completeMatches[$additionalMatches[2]][$file] []= $lineNum;
+				}
 
 				if ($match) {
-					$usages = array_merge($usages, $matches[2]);
+					$usages = array_merge($usages, $completeMatches);
 				}
 			}
 		}
 
 		foreach ($phpFiles as $file) {
-			$fileContents = file_get_contents($file);
+			$fileContents = file($file);
 
 			foreach ($this->phpMesageUsagePatterns as $pattern) {
-				$matches = array();
-				$match = preg_match_all($pattern, $fileContents, $matches, PREG_PATTERN_ORDER);
+				$matches = preg_grep($pattern, $fileContents);
+
+				foreach($matches as $lineNum => &$match) {
+					preg_match($pattern, $match, $additionalMatches);
+					$completeMatches[$additionalMatches[3]][$file] []= $lineNum;
+				}
 
 				if ($match) {
-					$usages = array_merge($usages, $matches[3]);
+					$usages = array_merge($usages, $completeMatches);
 				}
 			}
 		}
@@ -240,19 +248,20 @@ class CodeLintMessages extends CodeLint {
 
 		$definedMessages = array_keys($this->definedMessages);
 		foreach ($this->usageList as $directory => $messages) {
-			foreach ($messages as $messageKey) {
+			foreach ($messages as $messageKey => $usageSpecifics) {
 				$errorcount[$messageKey][self::ERROR_UNDEFINED_MESSAGE] = 0;
 				if (!in_array($messageKey, $definedMessages)) {
+					$files = array_keys($usageSpecifics);
+					$file = $files[0];
+					$line = $usageSpecifics[$files[0]][0];
+
 					$errors [] = array(
 						'type' => self::ERROR_UNDEFINED_MESSAGE,
 						'error' => 'Message ' . $messageKey . ' is not defined',
 						'raw' => "Message '{a}' is not defined",
 						'isImportant' => true,
-						'lines' => array(),
-						'blame' => array(
-							'author' => '?',
-							'rev' => '?',
-						),
+						'lines' => array(implode(",",$usageSpecifics[$files[0]])),
+						'blame' => $this->getBlameInfo($file,$line),
 						'a' => $messageKey
 					);
 				}
@@ -272,7 +281,8 @@ class CodeLintMessages extends CodeLint {
 	}
 
 	protected function checkUnusedMessage($messageKey, &$errorcount, &$errors) {
-		if (!in_array($messageKey, $this->usageList[$this->currentDir])) {
+		$usages = array_keys($this->usageList[$this->currentDir]);
+		if (!in_array($messageKey, $usages)) {
 			$errors [] = array(
 				'type' => self::ERROR_UNUSED_MESSAGE,
 				'raw' => "Message '{a}' seems to be unused",
