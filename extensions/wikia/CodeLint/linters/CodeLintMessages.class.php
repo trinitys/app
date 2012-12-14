@@ -4,6 +4,9 @@
  * CodeLint i18n
  * Class used for linting i18n files / message usage
  * @author Sebastian Marzjan
+ *
+ * Usage example:
+ * SERVER_ID=1 php /usr/wikia/source/wiki/maintenance/wikia/codelint.php --conf=/usr/wikia/docroot/wiki.factory/LocalSettings.php --mode=messages --dir=/usr/wikia/source/wiki/extensions/wikia/CodeLint/
  */
 
 class CodeLintMessages extends CodeLint {
@@ -24,9 +27,7 @@ class CodeLintMessages extends CodeLint {
 
 	// typical message calls in php files
 	protected $phpMesageUsagePatterns = array(
-		'#((\$app|F::app\(\)|\$this)->wf->[m|M]sg\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
-		'#((\$app|F::app\(\)|\$this)->wf->[m|M]sgForContent\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
-		'#((\$app|F::app\(\)|\$this)->wf->[m|M]sgExt\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((\$app|F::app\(\)|\$this)->wf->[m|M]sg[ForContent|Ext]?\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
 		'#((wfMsg|wfMsgForContent|wfMsgExt)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
 	);
 
@@ -68,8 +69,7 @@ class CodeLintMessages extends CodeLint {
 		if (empty($this->usageList[$extDir])) {
 			$this->buildUsageList($extDir);
 			if (!empty($this->usageList[$extDir])) {
-				// todo: uncomment before using on prod :-)
-				$this->saveListToCache($extDir,$this->usageList[$extDir]);
+				$this->saveListToCache($extDir, $this->usageList[$extDir]);
 			}
 		}
 	}
@@ -87,8 +87,8 @@ class CodeLintMessages extends CodeLint {
 	}
 
 	protected function filterOutFilesNotToScan(&$files) {
-		foreach($files as $key => $file) {
-			if(preg_match($this->fileRegexPattern, $file, $matches)) {
+		foreach ($files as $key => $file) {
+			if (preg_match($this->fileRegexPattern, $file, $matches)) {
 				unset($files[$key]);
 			}
 		}
@@ -103,28 +103,29 @@ class CodeLintMessages extends CodeLint {
 
 		$this->filterOutFilesNotToScan($phpFiles);
 
-		foreach($jsFiles as $file) {
+		foreach ($jsFiles as $file) {
 			$fileContents = file_get_contents($file);
+			echo $file;
 
-			foreach($this->jsMessageUsagePatterns as $pattern) {
+			foreach ($this->jsMessageUsagePatterns as $pattern) {
 				$matches = array();
 				$match = preg_match_all($pattern, $fileContents, $matches);
 
 				if ($match) {
-					$usages = array_merge($usages,$matches[2]);
+					$usages = array_merge($usages, $matches[2]);
 				}
 			}
 		}
 
-		foreach($phpFiles as $file) {
+		foreach ($phpFiles as $file) {
 			$fileContents = file_get_contents($file);
 
-			foreach($this->phpMesageUsagePatterns as $pattern) {
+			foreach ($this->phpMesageUsagePatterns as $pattern) {
 				$matches = array();
 				$match = preg_match_all($pattern, $fileContents, $matches, PREG_PATTERN_ORDER);
 
 				if ($match) {
-					$usages = array_merge($usages,$matches[3]);
+					$usages = array_merge($usages, $matches[3]);
 				}
 			}
 		}
@@ -307,7 +308,7 @@ class CodeLintMessages extends CodeLint {
 	protected function isBlacklisted($entry, $blacklist) {
 		wfProfileIn(__METHOD__);
 
-		if(is_file($entry)) {
+		if (is_file($entry)) {
 			$fileContents = file_get_contents($entry);
 			if (mb_strpos($fileContents, '/* i18nLint skip */') !== false) {
 				wfProfileOut(__METHOD__);
