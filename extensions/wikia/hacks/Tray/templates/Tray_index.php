@@ -39,14 +39,15 @@
 		<script type="text/template" id="WikiaTray-photos"><li><img src="{{url}}"></li></script>
 	</section>
 	<section class="user">
-		<h1>BladeBronson</h1>
+		<h1>BladeBronson <a href="#">Log out</a></h1>
+		<ul class="graphics">
+			<li><a href="#"><img src="/extensions/wikia/hacks/Tray/images/preferences.png"><br>Preferences</a></li>
+			<li><a href="#"><img src="/extensions/wikia/hacks/Tray/images/help.png"><br>Help</a></li>
+		</ul>
 		<ul>
 			<li><a href="#">User page</a></li>
 			<li><a href="#">Message Wall</a></li>
 			<li><a href="#">Contributions</a></li>
-			<li><a href="#">Preferences</a></li>
-			<li><a href="#">Help</a></li>
-			<li><a href="#">Log out</a></li>
 		</ul>
 		<h1>Message Wall <span class="reddot-wrapper"><span class="reddot">2</span></span></h1>
 		<h2>Muppet Wiki</h2>
@@ -54,7 +55,7 @@
 			<li>
 				<img src="/extensions/wikia/hacks/Tray/images/toughpigs.jpg" class="avatar">
 				<span class="what"><a href="#">Can we chat about Category pages?</a></span>
-				<span class="who">Posted by Toughpigs on your Message Wall</span>
+				<span class="who">Posted by <a href="#">Toughpigs</a> on your <a href="#">Message Wall</a></span>
 				<span class="when">22 minutes ago</span>
 			</li>
 		</ul>
@@ -63,7 +64,7 @@
 			<li>
 				<img src="/extensions/wikia/hacks/Tray/images/ohmyn0.jpg" class="avatar">
 				<span class="what"><a href="#">Bug reports?</a></span>
-				<span class="who">Posted by Ohmyn0 on Forums</span>
+				<span class="who">Posted by <a href="#">Ohmyn0</a> on <a href="#">Forums</a></span>
 				<span class="when">31 minutes ago</span>
 			</li>
 		</ul>
@@ -91,6 +92,13 @@
 			<li><a href="#">Admin Dashboard</a></li>
 			<li><a href="#">Theme Designer</a></li>
 			<li><a href="#">Edit wiki navigation</a></li>
+		</ul>
+
+		<h1>Random Links</h1>
+		<ul>
+			<li><a href="#">Recent Changes</a></li>
+			<li><a href="#">Special New Files</a></li>
+			<li><a href="#">Special User Rights</a></li>
 		</ul>
 
 	</section>
