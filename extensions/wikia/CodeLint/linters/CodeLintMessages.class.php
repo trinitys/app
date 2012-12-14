@@ -34,16 +34,16 @@ class CodeLintMessages extends CodeLint {
 
 	// typical message calls in php files
 	protected $phpMesageUsagePatterns = array(
-		'#((\$this->wf->[m|M]sg)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
-		'#((\$app->wf->[m|M]sg)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
-		'#((F::app\(\)->wf->[m|M]sg)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
-		'#((\$this->wf->[m|M]sgForContent)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
-		'#((\$app->wf->[m|M]sgForContent)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
-		'#((F::app\(\)->wf->[m|M]sgForContent)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
-		'#((\$this->wf->[m|M]sgExt)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
-		'#((\$app->wf->[m|M]sgExt)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
-		'#((F::app\(\)->wf->[m|M]sgExt)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
-		'#((wfMsg|wfMsgForContent|wfMsgExt)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((\$this->wf->[m|M]sg)\([ ]*[\'"]([a-zA-Z0-9-]*)[\'"][ ]*(,.*)?\))#',
+		'#((\$app->wf->[m|M]sg)\([ ]*[\'"]([a-zA-Z0-9-]*)[\'"][ ]*(,.*)?\))#',
+		'#((F::app\(\)->wf->[m|M]sg)\([ ]*[\'"]([a-zA-Z0-9-]*)[\'"][ ]*(,.*)?\))#',
+		'#((\$this->wf->[m|M]sgForContent)\([ ]*[\'"]([a-zA-Z0-9-]*)[\'"][ ]*(,.*)?\))#',
+		'#((\$app->wf->[m|M]sgForContent)\([ ]*[\'"]([a-zA-Z0-9-]*)[\'"][ ]*(,.*)?\))#',
+		'#((F::app\(\)->wf->[m|M]sgForContent)\([ ]*[\'"]([a-zA-Z0-9-]*)[\'"][ ]*(,.*)?\))#',
+		'#((\$this->wf->[m|M]sgExt)\([ ]*[\'"]([a-zA-Z0-9-]*)[\'"][ ]*(,.*)?\))#',
+		'#((\$app->wf->[m|M]sgExt)\([ ]*[\'"]([a-zA-Z0-9-]*)[\'"][ ]*(,.*)?\))#',
+		'#((F::app\(\)->wf->[m|M]sgExt)\([ ]*[\'"]([a-zA-Z0-9-]*)[\'"][ ]*(,.*)?\))#',
+		'#((wfMsg|wfMsgForContent|wfMsgExt)\([ ]*[\'"]([a-zA-Z0-9-]*)[\'"][ ]*(,.*)?\))#',
 	);
 
 	// typical message calls in js files
