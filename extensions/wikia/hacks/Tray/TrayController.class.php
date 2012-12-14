@@ -2,6 +2,8 @@
 class TrayController extends WikiaController {
 
 	public function index() {
+		$this->profileAvatar = AvatarService::renderAvatar($this->wg->User->getName(), 24);
+
 		$this->response->addAsset([
 			'extensions/wikia/hacks/Tray/css/TrayOverride.scss',
 			'extensions/wikia/hacks/Tray/css/Tray.scss',

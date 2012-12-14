@@ -2,13 +2,16 @@ var WikiaTray = {
 
 	// Properties
 	open: false,
+	selected: null,
 	speed: 250,
 	$search: $('#WikiaTrayHeader input[type="search"]'),
+	$avatar: $('#WikiaTrayHeader .avatar'),
 
 	// Methods
 	init: function() {
 		// Bindings
 		this.$search.on( 'input', $.proxy( this.searchChange, this ) );
+		this.$avatar.on( 'click', $.proxy( this.avatarClick, this ) );
 	},
 
 	searchChange: function() {
@@ -33,17 +36,18 @@ var WikiaTray = {
 					if ( data.suggestions.length ) {
 						var list = $('#WikiaTray .wiki-matches');
 
-						WikiaTray.openTray();
+						console.log('opening');
+						WikiaTray.openTray('search');
 
 						list.empty();
 						$.each( data.suggestions, function(index, value) {
-							console.log('logging value', value);
 							list.append( $('#WikiaTray-wiki-match').mustache({
 								name: value,
 								href: mw.config.values.wgArticlePath.replace('$1', value)
 							}) );
 						});
 					} else {
+						console.log('closing');
 						WikiaTray.closeTray();
 					}
 				}
@@ -52,14 +56,40 @@ var WikiaTray = {
 		});
 	},
 
-	openTray: function() {
+	avatarClick: function() {
+		if (this.selected == 'user') {
+			this.closeTray();
+		} else {
+			this.openTray( 'user' );
+		}
+	},
+
+	selectTab: function( name ) {
+		this.deselectTabs();
+		$('#WikiaTrayHeader .' + name + '-tab').addClass('selected');
+		$('#WikiaTray').find('.user, .search').hide();
+		$('#WikiaTray .' + name).show();
+		this.selected = name;
+	},
+
+	deselectTabs: function() {
+		$('#WikiaTrayHeader .tray-header-tab').removeClass('selected');
+		this.selected = null;
+	},
+
+	openTray: function( tab ) {
 		// Don't open if already open
 		if ( this.open ) {
 			return;
 		}
 
+		// Scroll to the top of the page
 		$(window).scrollTop( 0 );
 
+		// Highlight tab
+		this.selectTab( tab );
+
+		// Animate
 		$('body')
 			.addClass('tray-open')
 			.stop()
@@ -70,6 +100,7 @@ var WikiaTray = {
 			}, this.speed );
 
 		$('#WikiaTray')
+			.show()
 			.stop()
 			.clearQueue()
 			.animate( {
@@ -77,6 +108,7 @@ var WikiaTray = {
 				},
 			this.speed );
 
+		// Update property
 		this.open = true;
 	},
 
@@ -84,6 +116,8 @@ var WikiaTray = {
 		if ( !this.open ) {
 			return;
 		}
+
+		this.deselectTabs();
 
 		$('body')
 			.removeClass('tray-open')
@@ -99,7 +133,9 @@ var WikiaTray = {
 			.clearQueue()
 			.animate( {
 				'margin-right': -300
-			}, this.speed );
+			}, this.speed, function() {
+				$(this).hide();
+			} );
 
 		this.open = false;
 	}
