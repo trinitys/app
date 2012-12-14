@@ -415,6 +415,9 @@ a {
 	button {
 		margin: 5px 0px 5px 10px;
 	}
+	video {
+		background: #FFF;
+	}
 	// Other user's video stream (larger)
 	#vid2 {
 		width: 564px;
@@ -430,4 +433,7 @@ a {
 		right: -20px;
 		bottom: -20px;
 	}
+}
+.splotch {
+	display: none;
 }

@@ -11,7 +11,7 @@ $messages['en'] = array(
     'chat-welcome-message' => 'Welcome to the $1 chat',
     'chat-user-joined' => '$1 has joined the chat.',
     'chat-read-only' => 'Chat is temporarily unavailable while wiki is in read-only mode.',
-    'chat-private-messages' => 'Private Messages',
+    'chat-private-messages' => 'Video Chats',
     // Many of these are sent from server.js to the client (which uses $.msg() to translate the message).
     'chat-user-parted' => '$1 has left the chat.',
     'chat-user-blocked' => '$1 has blocked $2.',
