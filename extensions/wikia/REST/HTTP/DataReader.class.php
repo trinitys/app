@@ -3,6 +3,29 @@ namespace REST\HTTP;
 
 class DataReader extends \REST\base\DataReader {
 	function __construct( $action = null ) {
+		$qsData = $_GET;
+		$data = array();
+
+		//PHP puts anything after filename.php/ (e.g. rest.php/aaa)
+		//into a "title" key in the querystring array
+		$tokens = explode( '/', $qsData['title'] );
+		unset( $qsData['title'] );
+
+		//support scope parameters
+		if ( count( $tokens > 2 ) ) {
+			$tokens = array_slice( $tokens, 2 );
+
+			foreach( $tokens as &$t ) {
+				//support list of values for a parameter
+				//e.g lat,lon
+				if ( strpos( $t, ',' ) !== false ) {
+					$t = explode( ',', $t );
+				}
+			}
+
+			$data = $tokens;
+		}
+
 		switch ( $action ) {
 			case 'update':
 			case 'delete':
@@ -10,17 +33,14 @@ class DataReader extends \REST\base\DataReader {
 				// and then parse it out into an array via parse_str... per the PHP docs:
 				// Parses str  as if it were the query string passed via a URL and sets
 				// variables in the current scope.
-				$data = $this->parseRawRequest( file_get_contents( 'php://input' ) );
+				$data += $this->parseRawRequest( file_get_contents( 'php://input' ) );
 				break;
 			case 'create':
-				$data = $_POST;
+				$data += $_POST;
 				break;
 			default:
 			case 'read':
-				$data = $_GET;
-				//PHP puts anything after entrypoint.php/ (e.g. rest.php/aaa)
-				//into a "title" parameter in the querystring array
-				unset( $data['title'] );
+				$data += $qsData;
 				break;
 		}
 

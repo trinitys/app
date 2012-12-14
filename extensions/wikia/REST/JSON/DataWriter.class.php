@@ -8,7 +8,7 @@ class DataWriter extends \REST\base\DataWriter {
 		$this->setCharset( 'utf-8' );
 	}
 
-	public function toString() {
-		return json_encode( $this->content );
+	public function toString( $prettyPrint = false ) {
+		return json_encode( $this->content, ( !empty( $prettyPrint ) ) ? JSON_PRETTY_PRINT : null );
 	}
 }

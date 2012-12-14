@@ -13,12 +13,21 @@ class Route extends \REST\base\Route {
 		$path = $_SERVER['PATH_INFO'];
 		$method = $_SERVER['REQUEST_METHOD'];
 
-		$path = '\REST\API' . str_replace( '/', '\\', $path );
+		//only the first two parts of the path
+		//indentify a resource (version and resource name),
+		//the rest are scope paramenters
+		$tokens = array_slice( explode( '/', $path ), 1, 2 );
 
-		if ( in_array( $method, array_keys( self::$actionMap ) ) ) {
-			$method = self::$actionMap[$method];
+		if ( count( $tokens ) > 1 ) {
+			$path = '\REST\API\\' . implode( '\\', $tokens );
+
+			if ( in_array( $method, array_keys( self::$actionMap ) ) ) {
+				$method = self::$actionMap[$method];
+			}
+
+			parent::__construct( $path, $method );
+		} else {
+			throw new \Exception( 'Invalid path' );
 		}
-
-		parent::__construct( $path, $method );
 	}
 }
