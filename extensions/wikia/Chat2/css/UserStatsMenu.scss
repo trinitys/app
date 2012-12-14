@@ -84,7 +84,9 @@
 				}
 
 				&.private .icon {
-					@include sprite-Chat('menu-private_message' + $sprite-normal);
+					//@include sprite-Chat('menu-private_message' + $sprite-normal);
+					background-image: url('/extensions/wikia/Chat2/images/icon_videochat.png'); /* wgCdnStylePath */
+					opacity: .9;
 				}
 
 				&.private-block .icon {
@@ -120,7 +122,9 @@
 					}
 
 					&.private .icon {
-						@include sprite-Chat('menu-private_message' + $sprite-hover);
+						//@include sprite-Chat('menu-private_message' + $sprite-hover);
+						background-image: url('/extensions/wikia/Chat2/images/icon_videochat_white.png'); /* wgCdnStylePath */
+						opacity: .9;
 					}
 
 					&.private-block .icon {
