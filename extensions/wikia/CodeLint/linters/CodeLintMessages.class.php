@@ -8,18 +8,128 @@
 
 class CodeLintMessages extends CodeLint {
 	const LANG_KEY_DOCUMENTATION = 'qqq';
+
 	const ERROR_NONEXISTENT_DOCUMENTATION = 1;
 	const ERROR_UNDOCUMENTED_MESSAGE = 2;
 	const ERROR_WHITESPACES_AT_BEGINNING = 4;
 	const ERROR_WHITESPACES_AT_END = 8;
+	const ERROR_UNUSED_MESSAGE = 16;
+
+	const MESSAGE_USAGE_CACHE_BASE = '/tmp/message-usage-cache';
 
 	// file name pattern - used when linting directories
 	protected $filePattern = '*.i18n.php';
 
+	protected $fileRegexPattern = '#^(.*\.i18n\.php)$#';
+
+	// typical message calls in php files
+	protected $phpMesageUsagePatterns = array(
+		'#((\$app|F::app\(\)|\$this)->wf->[m|M]sg\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((\$app|F::app\(\)|\$this)->wf->[m|M]sgForContent\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((\$app|F::app\(\)|\$this)->wf->[m|M]sgExt\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+		'#((wfMsg|wfMsgForContent|wfMsgExt)\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+	);
+
+	// typical message calls in js files
+	protected $jsMessageUsagePatterns = array(
+		'#(\$.msg\([ ]?[\'"]([a-zA-Z0-9-]*)[\'"][ ]?(,.*)?\))#',
+	);
+
+	// typical root dirs of extensions
+	protected $rootDirPattern = "";
+
 	protected $currentFile = null;
+	protected $currentDir = null;
+
+	protected $usageList = array();
+
 
 	public function __construct() {
-		// initialize cache
+		global $IP;
+		$this->rootDirPattern = "#($IP/extensions/(wikia/)?([a-zA-Z0-9]+)/)#";
+	}
+
+	protected function getExtensionDirectory($fileName) {
+		$match = preg_match($this->rootDirPattern, $fileName, $matches);
+		if ($match && !empty($matches[1])) {
+			return $matches[1];
+		}
+		// failover
+		return dirname($fileName);
+	}
+
+	public function initializeUsages($fileName) {
+		$extDir = $this->getExtensionDirectory($fileName);
+
+		if (empty($this->usageList[$extDir])) {
+			$this->loadListFromCache($extDir);
+		}
+
+		if (empty($this->usageList[$extDir])) {
+			$this->buildUsageList($extDir);
+			if (!empty($this->usageList[$extDir])) {
+				// todo: uncomment before using on prod :-)
+				$this->saveListToCache($extDir,$this->usageList[$extDir]);
+			}
+		}
+	}
+
+	protected function loadListFromCache($directory) {
+		$cacheFile = self::MESSAGE_USAGE_CACHE_BASE . sha1($directory);
+		if (file_exists($cacheFile) && filemtime($cacheFile) > time() - 1 * 60 * 60) {
+			$this->usageList[$directory] = unserialize(file_get_contents($cacheFile));
+		}
+	}
+
+	protected function saveListToCache($directory, $data) {
+		$cacheFile = self::MESSAGE_USAGE_CACHE_BASE . sha1($directory);
+		file_put_contents($cacheFile, serialize($data));
+	}
+
+	protected function filterOutFilesNotToScan(&$files) {
+		foreach($files as $key => $file) {
+			if(preg_match($this->fileRegexPattern, $file, $matches)) {
+				unset($files[$key]);
+			}
+		}
+	}
+
+	protected function buildUsageList($directory) {
+		$usages = array();
+
+		$this->usageList[$directory] = array();
+		$jsFiles = $this->findFiles($directory, '*.js');
+		$phpFiles = $this->findFiles($directory, '*.php');
+
+		$this->filterOutFilesNotToScan($phpFiles);
+
+		foreach($jsFiles as $file) {
+			$fileContents = file_get_contents($file);
+
+			foreach($this->jsMessageUsagePatterns as $pattern) {
+				$matches = array();
+				$match = preg_match_all($pattern, $fileContents, $matches);
+
+				if ($match) {
+					$usages = array_merge($usages,$matches[2]);
+				}
+			}
+		}
+
+		foreach($phpFiles as $file) {
+			$fileContents = file_get_contents($file);
+
+			foreach($this->phpMesageUsagePatterns as $pattern) {
+				$matches = array();
+				$match = preg_match_all($pattern, $fileContents, $matches, PREG_PATTERN_ORDER);
+
+				if ($match) {
+					$usages = array_merge($usages,$matches[3]);
+				}
+			}
+		}
+
+		$this->usageList[$directory] = $usages;
 	}
 
 	/**
@@ -57,6 +167,9 @@ class CodeLintMessages extends CodeLint {
 		$errors = array();
 
 		$this->currentFile = file($fileName);
+		$this->currentDir = $this->getExtensionDirectory($fileName);
+		$this->initializeUsages($fileName);
+
 		// $messages should now be defined
 		require($fileName);
 
@@ -82,45 +195,72 @@ class CodeLintMessages extends CodeLint {
 						self::ERROR_UNDOCUMENTED_MESSAGE => 0,
 						self::ERROR_WHITESPACES_AT_BEGINNING => 0,
 						self::ERROR_WHITESPACES_AT_END => 0,
+						self::ERROR_UNUSED_MESSAGE => 0,
 					);
 				}
 
-				if (!in_array($messageKey, $documented_keys)) {
-					$errors [] = array(
-						'type' => self::ERROR_UNDOCUMENTED_MESSAGE,
-						'raw' => "Message '{a}' is not documented",
-						'reason' => 'Message ' . $messageKey . ' is not documented',
-						'line' => $this->findLineWith($messageKey, $errorcount[$messageKey][self::ERROR_UNDOCUMENTED_MESSAGE]),
-						'a' => $messageKey
-					);
-				}
-				if (ltrim($messageKey) != $messageKey) {
-					$errors [] = array(
-						'type' => self::ERROR_WHITESPACES_AT_BEGINNING,
-						'raw' => "Message '{a}' contains white characters at the beginning of key",
-						'reason' => $messageKey . ' is not documented',
-						'line' => $this->findLineWith($messageKey, $errorcount[$messageKey][self::ERROR_WHITESPACES_AT_BEGINNING]),
-						'a' => $messageKey
-					);
-				}
-				if (rtrim($messageKey) != $messageKey) {
-					$errors [] = array(
-						'type' => self::ERROR_WHITESPACES_AT_END,
-						'raw' => "Message '{a}' contains white characters at the end of key",
-						'reason' => 'Message ' . $messageKey . ' contains white characters at the end of key',
-						'line' => $this->findLineWith($messageKey, $errorcount[$messageKey][self::ERROR_WHITESPACES_AT_END]),
-						'a' => $messageKey
-					);
-				}
+				$this->checkUndocumentedMessage($messageKey, $documented_keys, $errorcount, $errors);
+				$this->checkWhitespacesAtBeginning($messageKey, $errorcount, $errors);
+				$this->checkWhitespacesAtEnd($messageKey, $errorcount, $errors);
+				$this->checkUnusedMessage($messageKey, $errorcount, $errors);
 			}
 		}
 
 		$this->currentFile = null;
+		$this->currentDir = null;
 
 		return array(
 			'errors' => $errors,
 			'time' => round(microtime(true) - $startTime, 4)
 		);
+	}
+
+	protected function checkUnusedMessage($messageKey, &$errorcount, &$errors) {
+		if (!in_array($messageKey, $this->usageList[$this->currentDir])) {
+			$errors [] = array(
+				'type' => self::ERROR_UNUSED_MESSAGE,
+				'raw' => "Message '{a}' seems to be unused",
+				'reason' => 'Message ' . $messageKey . ' seems to be unused',
+				'line' => $this->findLineWith($messageKey, $errorcount[$messageKey][self::ERROR_UNUSED_MESSAGE]),
+				'a' => $messageKey
+			);
+		}
+	}
+
+	protected function checkWhitespacesAtEnd($messageKey, &$errorcount, &$errors) {
+		if (rtrim($messageKey) != $messageKey) {
+			$errors [] = array(
+				'type' => self::ERROR_WHITESPACES_AT_END,
+				'raw' => "Message '{a}' contains white characters at the end of key",
+				'reason' => 'Message ' . $messageKey . ' contains white characters at the end of key',
+				'line' => $this->findLineWith($messageKey, $errorcount[$messageKey][self::ERROR_WHITESPACES_AT_END]),
+				'a' => $messageKey
+			);
+		}
+	}
+
+	protected function checkWhitespacesAtBeginning($messageKey, &$errorcount, &$errors) {
+		if (ltrim($messageKey) != $messageKey) {
+			$errors [] = array(
+				'type' => self::ERROR_WHITESPACES_AT_BEGINNING,
+				'raw' => "Message '{a}' contains white characters at the beginning of key",
+				'reason' => $messageKey . ' is not documented',
+				'line' => $this->findLineWith($messageKey, $errorcount[$messageKey][self::ERROR_WHITESPACES_AT_BEGINNING]),
+				'a' => $messageKey
+			);
+		}
+	}
+
+	protected function checkUndocumentedMessage($messageKey, $documented_keys, &$errorcount, &$errors) {
+		if (!in_array($messageKey, $documented_keys)) {
+			$errors [] = array(
+				'type' => self::ERROR_UNDOCUMENTED_MESSAGE,
+				'raw' => "Message '{a}' is not documented",
+				'reason' => 'Message ' . $messageKey . ' is not documented',
+				'line' => $this->findLineWith($messageKey, $errorcount[$messageKey][self::ERROR_UNDOCUMENTED_MESSAGE]),
+				'a' => $messageKey
+			);
+		}
 	}
 
 	protected function findLineWith($messageKey, &$errorcount) {
@@ -148,7 +288,7 @@ class CodeLintMessages extends CodeLint {
 	protected function isImportantError($errorMsg) {
 		switch ($errorMsg) {
 			case 'Message documentation does not exist at all':
-			 	$ret = true;
+				$ret = true;
 				break;
 			default:
 				$ret = false;
@@ -167,13 +307,15 @@ class CodeLintMessages extends CodeLint {
 	protected function isBlacklisted($entry, $blacklist) {
 		wfProfileIn(__METHOD__);
 
-		$fileContents = file_get_contents($entry);
-		if (mb_strpos($fileContents, '/* i18nLint skip */') !== false) {
-			wfProfileOut(__METHOD__);
-			return true;
+		if(is_file($entry)) {
+			$fileContents = file_get_contents($entry);
+			if (mb_strpos($fileContents, '/* i18nLint skip */') !== false) {
+				wfProfileOut(__METHOD__);
+				return true;
+			}
 		}
 
-		if(parent::isBlacklisted($entry, $blacklist)) {
+		if (parent::isBlacklisted($entry, $blacklist)) {
 			return true;
 		}
 
