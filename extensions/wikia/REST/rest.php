@@ -18,7 +18,7 @@ if ( $wgProfiler instanceof Profiler ) {
 }
 
 $route = new REST\HTTP\Route();
-$data = new REST\HTTP\DataReader();
+$data = new REST\HTTP\DataReader( $route->getAction() );
 $router = new REST\Router();
 
 $router->setRoute( $route );

@@ -57,9 +57,7 @@ abstract class Route {
 			$action = $this->getAction();
 
 			if ( in_array( self::$actionsList[$action], class_implements( $resource ) ) ) {
-				$instance = new $resource();
-				$instance->setData( $data );
-				$result = $instance->$action();
+				$result = call_user_func_array( array( $resource, $action ), $data->getValues() );
 
 				//TODO: return instance of DataWriter
 				return $result;
