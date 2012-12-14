@@ -643,5 +643,9 @@ class WikiaSearchConfig extends WikiaObject implements ArrayAccess
 		}
 		return $this;
 	}
+	
+	public function getGroupingType() {
+		return $this->offsetGet( 'groupingType' ) ?: 'host';
+	}
 
 }
