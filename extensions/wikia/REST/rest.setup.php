@@ -35,6 +35,7 @@ $wgAutoloadClasses['REST\Router'] = __DIR__ . "/Router.class.php";
  */
 $wgAutoloadClasses['REST\base\Route'] = __DIR__ . "/base/Route.class.php";
 $wgAutoloadClasses['REST\base\DataReader'] = __DIR__ . "/base/DataReader.class.php";
+$wgAutoloadClasses['REST\base\DataWriter'] = __DIR__ . "/base/DataWriter.class.php";
 $wgAutoloadClasses['REST\base\Resource'] = __DIR__ . "/base/Resource.class.php";
 
 /**
@@ -50,6 +51,11 @@ $wgAutoloadClasses['REST\base\Deletable'] = __DIR__ . "/base/Deletable.interface
  */
 $wgAutoloadClasses['REST\HTTP\Route'] = __DIR__ . "/HTTP/Route.class.php";
 $wgAutoloadClasses['REST\HTTP\DataReader'] = __DIR__ . "/HTTP/DataReader.class.php";
+
+/**
+ * JSON classes
+ */
+$wgAutoloadClasses['REST\JSON\DataWriter'] = __DIR__ . "/JSON/DataWriter.class.php";
 
 /**
  * API modules

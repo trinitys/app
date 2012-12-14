@@ -50,16 +50,14 @@ abstract class Route {
 		return $this->action;
 	}
 
-	public function resolve( DataReader $data ) {
+	public function resolve( Array $data ) {
 		$resource = $this->getResource();
 
 		if ( class_exists( $resource ) ) {
 			$action = $this->getAction();
 
 			if ( in_array( self::$actionsList[$action], class_implements( $resource ) ) ) {
-				$result = call_user_func_array( array( $resource, $action ), $data->getValues() );
-
-				//TODO: return instance of DataWriter
+				$result = call_user_func_array( array( $resource, $action ), $data );
 				return $result;
 			} else {
 				throw new \Exception( 'The resource doesn\'t support the requested action' );

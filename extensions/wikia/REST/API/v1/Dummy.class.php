@@ -10,7 +10,10 @@ class Dummy extends \REST\base\Resource
 		$total = (int) $a * (int) $b;
 		$total -= (int) $c;
 
-		return "({$a} x {$b}) - {$c} = {$total}, Yo!";
+		return array(
+			'operation' => "({$a} x {$b}) - {$c}",
+			'total' => $total
+		);
 	}
 
 	public function create( $a = 1, $b = 1, $c = 1 ) {

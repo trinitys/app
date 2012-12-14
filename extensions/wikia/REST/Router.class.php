@@ -3,16 +3,28 @@ namespace REST;
 
 final class Router {
 	protected $route;
-	protected $data;
+	protected $reader;
+	protected $writer;
 
 	function __construct() {
 		$this->route = null;
 		$this->data = null;
+		$this->writer = null;
 	}
 
 	public function run() {
 		if ( !is_null( $this->route ) ) {
-			return $this->route->resolve( $this->data );
+			$result = $this->route->resolve( $this->reader->getValues() );
+			$this->writer->setContent( $result );
+
+			if ( in_array( $this->route->getAction(), array( 'create', 'update', 'delete' ) ) ) {
+				$factory = wfGetLBFactory();
+
+				//commits only if writes were done on connection
+				if ( $factory instanceof LBFactory ) {
+					$factory->commitMasterChanges();
+				}
+			}
 		} else {
 			throw new \Exception( 'No route' );
 		}
@@ -26,11 +38,19 @@ final class Router {
 		return $this->route;
 	}
 
-	public function setData( base\DataReader $data ) {
-		$this->data = $data;
+	public function setReader( base\DataReader $reader ) {
+		$this->reader = $reader;
 	}
 
-	public function getData() {
-		return $this->data;
+	public function getReader() {
+		return $this->reader;
+	}
+
+	public function setWriter( base\DataWriter $writer ) {
+		$this->writer = $writer;
+	}
+
+	public function getWriter() {
+		return $this->writer;
 	}
 }

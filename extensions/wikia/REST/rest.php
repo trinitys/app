@@ -10,19 +10,27 @@ if ( $_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 	return;
 }
 
-// Initialise common MW code
+//initialize MW
 require ( __DIR__ . '/../../../includes/WebStart.php' );
 
+//setup profiler
 if ( $wgProfiler instanceof Profiler ) {
 	$wgProfiler->setTemplated( true );
 }
 
 $route = new REST\HTTP\Route();
-$data = new REST\HTTP\DataReader( $route->getAction() );
+$reader = new REST\HTTP\DataReader( $route->getAction() );
+$writer = new REST\JSON\DataWriter();
 $router = new REST\Router();
 
 $router->setRoute( $route );
-$router->setData( $data );
-$result = $router->run();
+$router->setReader( $reader );
+$router->setWriter( $writer );
 
-var_dump( $result );
+$router->run();
+
+header( "Content-Type: {$writer->getContentType()}; charset={$writer->getCharset()}" );
+echo( $writer->toString() );
+
+//print out profiling data if requested
+wfLogProfilingData();
