@@ -43,10 +43,11 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 
 	/**
 	 * Used primarily for search groupings.
-	 * This is the hostname of the wiki all the results belong to.
+	 * By default, this is the hostname of the wiki all the results belong to.
+	 * It can also be a query, or another field value
 	 * @var string
 	 */
-	protected $host;
+	protected $groupId;
 
 	/**
 	 * The object that Solarium builds after getting a Solr response
@@ -65,7 +66,10 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 	 * @var WikiaSearchResultSet
 	 */
 	protected $parent;
+	
+	protected $grouping;
 
+	
 	/**
 	 * Accepts a Solarium select result and a search config.
 	 * If not the root search result set, you should provide the parent and metaposition.
@@ -81,7 +85,7 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 		$this->searchConfig			= $searchConfig;
 		$this->parent				= $parent;
 		$this->metaposition			= $metaposition;
-		$this->configure( $parent, $metaposition );
+		$this->configure();
 		wfProfileOut(__METHOD__);
 	}
 	
@@ -107,7 +111,7 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 		$satisfies = ( $this->parent === null ) && $this->searchConfig->getGroupResults();
 		if ( $satisfies ) {
 			$this->setResultGroupings();
-			$this->setResultsFound( $this->getHostGrouping()->getMatches() );
+			$this->setResultsFound( $this->searchResultObject->getNumFound() );
 		}
 		wfProfileOut(__METHOD__);
 		return $satisfies;
@@ -121,13 +125,19 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 		wfProfileIn(__METHOD__);
 		$satisfies = ( $this->parent !== null ) && ( $this->metaposition !==  null );
 		if ( $satisfies ) {
-			$valueGroups	= $this->getHostGrouping()->getValueGroups();
-			$valueGroup		= $valueGroups[$this->metaposition];
-			$this->host		= $valueGroup->getValue();
-			$documents		= $valueGroup->getDocuments();
+			if ( $this->searchConfig->getGroupingType() == 'query' ) {
+				$documents		= $this->getGrouping()->getDocuments();
+				$numFound		= $this->getGrouping()->getNumFound();
+			} else {
+				$valueGroups	= $this->getGrouping()->getValueGroups();
+				$valueGroup		= $valueGroups[$this->metaposition];
+				$this->groupId	= $valueGroup->getValue();
+				$documents		= $valueGroup->getDocuments();
+				$numFound		= $valueGroup->getNumFound();
+			}
 	
 			$this	->setResults		( $documents )
-					->setResultsFound	( $valueGroup->getNumFound() );
+					->setResultsFound	( $numFound );
 	
 			if ( count( $documents ) > 0 ) {
 				$exampleDoc		= $documents[0];
@@ -164,18 +174,30 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 	 * @throws Exception
 	 * @return Solarium_Result_Select_Grouping_FieldGroup
 	 */
-	protected function getHostGrouping() {
+	protected function getGrouping() {
 		wfProfileIn(__METHOD__);
+		if ( $this->grouping ) {
+			return $this->grouping;
+		}
 		$grouping = $this->searchResultObject->getGrouping();
 		if (! $grouping ) {
 		    throw new Exception("Search config was grouped but result was not.");
 		}
-		$hostGrouping = $grouping->getGroup('host');
-		if (! $hostGrouping ) {
+		if ( $queries = $this->searchConfig->getGroupingQueries() ) {
+			$vals = array_values($queries);
+			$keys = array_keys($queries);
+			$groupKey = $vals[$this->metaposition];
+			$group = $grouping->getGroup( $groupKey );
+			$this->groupId = $keys[$this->metaposition];
+		} else {
+			$group = array_shift( $grouping->getGroups() );
+		}
+		if (! $group ) {
 		    throw new Exception("Search results were not grouped by host field.");
 		}
+		$this->grouping = $group;
 		wfProfileOut(__METHOD__);
-		return $hostGrouping;
+		return $group;
 	}
 
 	/**
@@ -184,11 +206,19 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 	 */
 	protected function setResultGroupings() {
 		wfProfileIn(__METHOD__);
-		$fieldGroup = $this->getHostGrouping();
 		$metaposition = 0;
-		foreach ($fieldGroup->getValueGroups() as $valueGroup) {
-			$resultSet = F::build('WikiaSearchResultSet', array($this->searchResultObject, $this->searchConfig, $this, $metaposition++));
-			$this->results[$resultSet->getHeader('cityUrl')] = $resultSet;
+		if ( $this->searchConfig->getGroupingType() != 'query' ) {
+			$fieldGroup = $this->getGrouping();
+			foreach ($fieldGroup->getValueGroups() as $valueGroup) {
+				$resultSet = F::build('WikiaSearchResultSet', array($this->searchResultObject, $this->searchConfig, $this, $metaposition++));
+				$this->results[$resultSet->getHeader('cityUrl')] = $resultSet;
+			}
+		} else {
+			$groupingKeys = array_keys($this->searchConfig->getGroupingQueries());
+			foreach ( $this->searchResultObject->getGrouping()->getGroups() as $query => $results ) {
+				$resultSet = F::build('WikiaSearchResultSet', array($this->searchResultObject, $this->searchConfig, $this, $metaposition));
+				$this->results[$groupingKeys[$metaposition++]] = $resultSet;
+			}
 		}
 		wfProfileOut(__METHOD__);
 		return $this;
@@ -499,7 +529,7 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 	 * @return string|null
 	 */
 	public function getId() {
-		return $this->host;
+		return $this->groupId;
 	}
 
 	/**
@@ -519,9 +549,11 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 	 */
 	public function toNestedArray( array $expectedFields = array( 'title', 'url' ) ) {
 		$tempResults = array();
-		foreach( $this->results as $result ){
+		foreach( $this->results as $id => $result ){
 		    if( $result instanceof WikiaSearchResult ){
-		        $tempResults[] = $result->toArray( $expectedFields );
+		        $tempResults[$id] = $result->toArray( $expectedFields );
+		    } else if ( $result instanceof WikiaSearchResultSet) {
+		    	$tempResults[$id] = $result->toNestedArray( $expectedFields );
 		    }
 		}
 		return $tempResults;
