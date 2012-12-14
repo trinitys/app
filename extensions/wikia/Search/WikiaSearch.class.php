@@ -382,6 +382,55 @@ class WikiaSearch extends WikiaObject {
 	}
 	
 	/**
+	 * Returns an array with four WikiaSearchResultSet 
+	 * @param WikiaSearchConfig $config
+	 */
+	public function getTray( WikiaSearchConfig $searchConfig ) {
+		
+		$query = $this->client->createSelect();
+		$query->setDocumentClass( 'WikiaSearchResult' );
+		
+		$query	->addFields		( $searchConfig->getRequestedFields() )
+				->removeField	('*')
+			  	->setStart		( $searchConfig->getStart() )
+				->setRows		( $searchConfig->getLength() )
+				->addParam		( 'timeAllowed', 500 )
+				->setQuery		( self::valueForField('title', $searchConfig->getQueryNoQuotes( true ).'*' ) )
+		;
+		
+		$queries = array(
+				'default'		=> self::valueForField( 'wid', $this->wg->CityId ) . ' AND ns:0',
+			  	'cross-wiki'	=> self::valueForField( '-wid', $this->wg->CityId ) . ' AND ns:0',
+			  	'videos'		=> self::valueForField( 'wid', self::VIDEO_WIKI_ID ) . ' AND is_video:true',
+			  	'images'		=> self::valueForField( 'wid', $this->wg->CityId ) . ' AND ns:6',
+		);
+
+		$searchConfig->setGroupResults( true )
+					 ->setGroupingQueries( $queries )
+					 ->setGroupingType( 'query' );
+		
+		$query->getGrouping()
+			  ->setLimit( 4 )
+			  ->setQueries( array_values($queries) );
+		
+		try {
+			$result = $this->client->select( $query );
+		} catch ( Exception $e ) {echo $e; die;
+			F::build('Wikia')->log(__METHOD__, 'Querying Solr First Time', $e);
+			$searchConfig->setError( $e );
+			$result = F::build('Solarium_Result_Select_Empty');
+		}
+		
+		$results = F::build('WikiaSearchResultSet', array($result, $searchConfig) );
+		
+		$searchConfig->setResults		( $results )
+					 ->setResultsFound	( $results->getResultsFound() )
+		;
+		
+		return $results;
+	}
+	
+	/**
 	 * Public static helper functions for dynamic language support
 	 *------------------------------------------------------------------------*/
 	
