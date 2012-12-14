@@ -122,7 +122,6 @@ class CodeLintMessages extends CodeLint {
 
 		foreach ($jsFiles as $file) {
 			$fileContents = file($file);
-			echo $file;
 
 			foreach ($this->jsMessageUsagePatterns as $pattern) {
 				$matches = preg_grep($pattern, $fileContents);
@@ -130,10 +129,6 @@ class CodeLintMessages extends CodeLint {
 				foreach($matches as $lineNum => &$match) {
 					preg_match($pattern, $match, $additionalMatches);
 					$completeMatches[$additionalMatches[2]][$file] []= $lineNum;
-				}
-
-				if ($match) {
-					$usages = array_merge($usages, $completeMatches);
 				}
 			}
 		}
@@ -148,14 +143,10 @@ class CodeLintMessages extends CodeLint {
 					preg_match($pattern, $match, $additionalMatches);
 					$completeMatches[$additionalMatches[3]][$file] []= $lineNum;
 				}
-
-				if ($match) {
-					$usages = array_merge($usages, $completeMatches);
-				}
 			}
 		}
 
-		$this->usageList[$directory] = $usages;
+		$this->usageList[$directory] = $completeMatches;
 	}
 
 	/**
