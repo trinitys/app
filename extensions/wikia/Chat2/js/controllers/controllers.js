@@ -644,6 +644,8 @@ var NodeChatController = $.createClass(NodeRoomController,{
 			}
 		}
 
+		var socket = this.socket;
+
 		console.log("XXXXXXXXXXXXXXXXXXXXXXX");
 		
 		var btn1 = $('#btn1').on('click', start)[0];
@@ -721,6 +723,12 @@ var NodeChatController = $.createClass(NodeRoomController,{
 		}
 
 		function sendOffer(desc) {
+			var setStatusCommand = new models.SetStatusCommand({
+				statusState: STATUS_STATE_AWAY,
+				statusMessage: 'no sens'
+			});
+			socket.send(setStatusCommand.xport());
+
 			$().log(desc);
 			var sdp = desc.sdp;
 			var desc2 = new RTCSessionDescription({type:"offer", sdp:sdp});
