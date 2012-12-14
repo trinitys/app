@@ -408,20 +408,26 @@ a {
 }
 
 .VideoChat {
+	width:574px;
+	height: 435px;
+	margin: 20px auto 0;
+	position: relative;
 	button {
 		margin: 5px 0px 5px 10px;
 	}
-	video {
-		margin: 10px;
-	}
+	// Other user's video stream (larger)
 	#vid2 {
-		width: 350px;
-		height: 261px;
+		width: 564px;
+		height: 425px;
 		border: 5px solid #CCC;
 	}
+	// Your video stream (smaller and overlayed)
 	#vid1 {
 		width: 202px;
 		height: 150px;
 		border: 5px solid #CCC;
+		position: absolute;
+		right: 0px;
+		bottom: 0px;
 	}
 }
