@@ -48,19 +48,44 @@
 			<li><a href="#">Help</a></li>
 			<li><a href="#">Log out</a></li>
 		</ul>
-		<h1>Message Wall</h1>
-		<p class="empty">You have no new messages</p>
+		<h1>Message Wall <span class="reddot-wrapper"><span class="reddot">2</span></span></h1>
+		<h2>Muppet Wiki</h2>
+		<ul class="messages">
+			<li>
+				<img src="/extensions/wikia/hacks/Tray/images/toughpigs.jpg" class="avatar">
+				<span class="what"><a href="#">Can we chat about Category pages?</a></span>
+				<span class="who">Posted by Toughpigs on your Message Wall</span>
+				<span class="when">22 minutes ago</span>
+			</li>
+		</ul>
+		<h2>Scrubs Wiki</h2>
+		<ul class="messages">
+			<li>
+				<img src="/extensions/wikia/hacks/Tray/images/ohmyn0.jpg" class="avatar">
+				<span class="what"><a href="#">Bug reports?</a></span>
+				<span class="who">Posted by Ohmyn0 on Forums</span>
+				<span class="when">31 minutes ago</span>
+			</li>
+		</ul>
 		<h1>Contribute</h1>
-		<ul>
-			<li><a href="#">Add a page</a></li>
-			<li><a href="#">Add a photo</a></li>
-			<li><a href="#">Add a video</a></li>
-		</ul>
-		<ul>
-			<li><a href="#">Edit this page</a></li>
-			<li><a href="#">What links here</a></li>
-			<li><a href="#">Follow</a></li>
-		</ul>
+		<div class="tint">
+			<div class="columns-2 first">
+				<h2>New Content</h2>
+				<ul>
+					<li><a href="#">Add a page</a></li>
+					<li><a href="#">Add a photo</a></li>
+					<li><a href="#">Add a video</a></li>
+				</ul>
+			</div>
+			<div class="columns-2 last">
+				<h2>This Article</h2>
+				<ul>
+					<li><a href="#">Edit this page</a></li>
+					<li><a href="#">What links here</a></li>
+					<li><a href="#">Follow</a></li>
+				</ul>
+			</div>
+		</div>
 		<h1>Admin</h1>
 		<ul>
 			<li><a href="#">Admin Dashboard</a></li>
