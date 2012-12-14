@@ -373,7 +373,7 @@ a {
 	}
 	.unread {
 		.splotch {
-			display: block;
+			display: none;
 		}
 		.username:after {
 			display: none;
@@ -433,7 +433,4 @@ a {
 		right: -20px;
 		bottom: -20px;
 	}
-}
-.splotch {
-	display: none;
 }
