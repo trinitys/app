@@ -126,9 +126,9 @@ class CodeLintMessages extends CodeLint {
 			foreach ($this->jsMessageUsagePatterns as $pattern) {
 				$matches = preg_grep($pattern, $fileContents);
 
-				foreach($matches as $lineNum => &$match) {
+				foreach ($matches as $lineNum => &$match) {
 					preg_match($pattern, $match, $additionalMatches);
-					$completeMatches[$additionalMatches[2]][$file] []= $lineNum;
+					$completeMatches[$additionalMatches[2]][$file] [] = $lineNum;
 				}
 			}
 		}
@@ -139,9 +139,9 @@ class CodeLintMessages extends CodeLint {
 			foreach ($this->phpMesageUsagePatterns as $pattern) {
 				$matches = preg_grep($pattern, $fileContents);
 
-				foreach($matches as $lineNum => &$match) {
+				foreach ($matches as $lineNum => &$match) {
 					preg_match($pattern, $match, $additionalMatches);
-					$completeMatches[$additionalMatches[3]][$file] []= $lineNum;
+					$completeMatches[$additionalMatches[3]][$file] [] = $lineNum;
 				}
 			}
 		}
@@ -234,41 +234,43 @@ class CodeLintMessages extends CodeLint {
 	}
 
 	public function afterCheckDirectory($directoryName, $blacklist = array()) {
-		$errors = array();
-		$startTime = microtime(true);
-
 		$definedMessages = array_keys($this->definedMessages);
 		foreach ($this->usageList as $directory => $messages) {
 			foreach ($messages as $messageKey => $usageSpecifics) {
+				$errors = array();
+				$startTime = microtime(true);
+				$results = array();
 				$errorcount[$messageKey][self::ERROR_UNDEFINED_MESSAGE] = 0;
 				if (!in_array($messageKey, $definedMessages)) {
-					$files = array_keys($usageSpecifics);
-					$file = $files[0];
-					$line = $usageSpecifics[$files[0]][0];
 
-					$errors [] = array(
-						'type' => self::ERROR_UNDEFINED_MESSAGE,
-						'error' => 'Message ' . $messageKey . ' is not defined',
-						'raw' => "Message '{a}' is not defined",
-						'isImportant' => true,
-						'lines' => array(implode(",",$usageSpecifics[$files[0]])),
-						'blame' => $this->getBlameInfo($file,$line),
-						'a' => $messageKey
-					);
+					foreach($usageSpecifics as $file => $lines) {
+						$errors [] = array(
+							'type' => self::ERROR_UNDEFINED_MESSAGE,
+							'error' => 'Message ' . $messageKey . ' is not defined',
+							'raw' => "Message '{a}' is not defined",
+							'isImportant' => true,
+							'lines' => $lines ,
+							'blame' => $this->getBlameInfo($file, $lines[0]),
+							'a' => $messageKey
+						);
+
+						$results[$file] = array(
+							'errors' => $errors,
+							'errorsCount' => count($errors),
+							'importantErrorsCount' => count($errors),
+							'time' => round(microtime(true) - $startTime, 4),
+							'lines' => $lines,
+							'fileChecked' => realpath($file)
+						);
+					}
 				}
+
 			}
 		}
 
-		return array(
-			realpath($directoryName) => array(
-				'errors' => $errors,
-				'errorsCount' => count($errors),
-				'importantErrorsCount' => count($errors),
-				'time' => round(microtime(true) - $startTime, 4),
-				'lines' => '?',
-				'fileChecked' => realpath($directoryName)
-			)
-		);
+
+
+		return $results;
 	}
 
 	protected function checkUnusedMessage($messageKey, &$errorcount, &$errors) {
