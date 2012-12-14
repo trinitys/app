@@ -323,17 +323,7 @@ var NodeRoomController = $.createClass(Observable,{
 
 				// Private message
 				if( !this.isMain() ) {
-					if( this.afterInitQueue.length < 1 || this.model.users.length < 2 ){
-						this.mainController.socket.send( this.model.privateRoom.xport() );
-					}
-					if( !this.isInitialized  ) {
-						this.afterInitQueue.push(chatEntry.xport());
-						//temp chat entry in case of slow connection time
-						chatEntry.set({temp : true, avatarSrc: wgAvatarUrl });
-						this.model.chats.add(chatEntry);
-					} else {
-						this.socket.send(chatEntry.xport());
-					}
+					this.priv(chatEntry);
 				} else {
 					this.socket.send(chatEntry.xport());
 				}
@@ -341,6 +331,21 @@ var NodeRoomController = $.createClass(Observable,{
 				inputField.val('').focus();
 				$('body').removeClass('warn limit-near limit-reached');
 			}
+		}
+	},
+
+
+	priv: function(chatEntry) {
+		if( this.afterInitQueue.length < 1 || this.model.users.length < 2 ){
+			this.mainController.socket.send( this.model.privateRoom.xport() );
+		}
+		if( !this.isInitialized  ) {
+			this.afterInitQueue.push(chatEntry.xport());
+			//temp chat entry in case of slow connection time
+			chatEntry.set({temp : true, avatarSrc: wgAvatarUrl });
+			this.model.chats.add(chatEntry);
+		} else {
+			this.socket.send(chatEntry.xport());
 		}
 	},
 
@@ -664,7 +669,8 @@ var NodeChatController = $.createClass(NodeRoomController,{
 	},
 
 	showRoom: function(roomId) {
-		$().log(roomId);
+		var socket = this.socket;
+
 		if( this.activeRoom == roomId ) {
 			return false;
 		}
@@ -684,15 +690,26 @@ var NodeChatController = $.createClass(NodeRoomController,{
 			}
 		}
 
-		var socket = this.socket;
 
+		var chatEntry = new models.ChatEntry({
+			roomId: roomId,
+			name: wgUserName,
+			text: "dssddsdsdsjkdsjk dskjdskjds dskjdskjds dskdjskjds dskjds"
+		});
 
-		console.log("XXXXXXXXXXXXXXXXXXXXXXX");
+		// Private message
+/*
+		chats: {
+			main: null,
+				opens: {}, //to store more than one open chat in one window not supported yet (for now only one)
+			privates
+*/
+			window.mainRoom.chats.privates[roomId].priv(chatEntry);
+
+		console.log("1");
 		
-		var btn1 = $('#btn1').on('click', createPeerConnection);
-		var btn2 = $('#btn2').on('click', doCall);
-//		var btn3 = $('#btn3').on('click', hangup);
-
+//		var btn1 = $('#btn1').on('click', createPeerConnection);
+//		var btn2 = $('#btn2').on('click', doCall);
 
 		console.log("This appears to be Chrome");
 
@@ -703,7 +720,7 @@ var NodeChatController = $.createClass(NodeRoomController,{
 		var remoteStream;
 		var channel;
 		var channelReady = false;
-
+		var videoConnected = false;
 
 		var mediaConstraints = {'mandatory': {
 			'OfferToReceiveAudio':true,
@@ -730,6 +747,8 @@ var NodeChatController = $.createClass(NodeRoomController,{
 			// Call the polyfill wrapper to attach the media stream to this element.
 			attachMediaStream(localVideo, stream);
 			localStream = stream;
+
+			createPeerConnection();
 			// Caller creates PeerConnection.
 		}
 
@@ -763,7 +782,8 @@ var NodeChatController = $.createClass(NodeRoomController,{
 			pc.onremovestream = onRemoteStreamRemoved;
 
 			pc.addStream(localStream);
-
+			iready = true;
+			sendMsg({type: 'ready'});
 		}
 
 		function onIceCandidate(event) {
@@ -799,10 +819,20 @@ var NodeChatController = $.createClass(NodeRoomController,{
 
 
 		//hand shake
-
+		var iready = false;
+		var connected = false;
 		function doCall() {
+			if(connected || !iready) {
+				return true;
+			}
+			connected = true;
+			var r= true; //confirm("Press a button");
+			if (r==true) {
 			console.log("Sending offer to peer.");
 			pc.createOffer(setLocalAndSendMessage, null, mediaConstraints);
+			} else {
+
+			}
 		}
 
 		function doAnswer() {
@@ -832,11 +862,14 @@ var NodeChatController = $.createClass(NodeRoomController,{
 			}
 
 			var msg = rtcObj.msg;
-			if (msg.type === 'offer') {
+			if (msg.type === 'ready') {
+				doCall();
+			} else if (msg.type === 'offer' && !videoConnected) {
 				pc.setRemoteDescription(new RTCSessionDescription(msg));
 				doAnswer();
 			} else if (msg.type === 'answer' ) {
 				pc.setRemoteDescription(new RTCSessionDescription(msg));
+				videoConnected = true;
 			} else if (msg.type === 'candidate' ) {
 				var candidate = new RTCIceCandidate({sdpMLineIndex:msg.label,
 					candidate:msg.candidate});
@@ -892,6 +925,7 @@ var NodeChatController = $.createClass(NodeRoomController,{
 				this.baseOpenPrivateRoom(data, true);
 				this.showRoom(data.get('roomId') );
 				this.chats.privates[ data.get('roomId') ].init();
+
 				//this.socket.send(data.xport());
 			}, this)
 		});

@@ -390,10 +390,7 @@ var NodeChatDiscussion = Backbone.View.extend({
 		else			this.forceScroll = false;
 	},
 	startVideoChat: function () {
-
-		
 		this.chatDiv.html('<div class="VideoChat"><video id="vid2" autoplay></video><video id="vid1" autoplay></video></div>');
-
 	}
 });
 //TODO: rename it to frame NodeChatFrame ?
