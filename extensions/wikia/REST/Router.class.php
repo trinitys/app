@@ -26,7 +26,7 @@ final class Router {
 		return $this->route;
 	}
 
-	public function setData( $data ) {
+	public function setData( base\DataReader $data ) {
 		$this->data = $data;
 	}
 

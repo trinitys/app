@@ -50,16 +50,16 @@ abstract class Route {
 		return $this->action;
 	}
 
-	//TODO: force type to DataReader
-	public function resolve( $data ) {
+	public function resolve( DataReader $data ) {
 		$resource = $this->getResource();
 
 		if ( class_exists( $resource ) ) {
 			$action = $this->getAction();
 
 			if ( in_array( self::$actionsList[$action], class_implements( $resource ) ) ) {
-				$module = new $resource();
-				$result = $module->$action();
+				$instance = new $resource();
+				$instance->setData( $data );
+				$result = $instance->$action();
 
 				//TODO: return instance of DataWriter
 				return $result;

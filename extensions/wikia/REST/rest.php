@@ -18,9 +18,11 @@ if ( $wgProfiler instanceof Profiler ) {
 }
 
 $route = new REST\HTTP\Route();
+$data = new REST\HTTP\DataReader();
 $router = new REST\Router();
-$router->setRoute( $route );
-$router->setData( array( $_GET, $_POST ) );
-$data = $router->run();
 
-var_dump( $data );
+$router->setRoute( $route );
+$router->setData( $data );
+$result = $router->run();
+
+var_dump( $result );
