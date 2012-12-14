@@ -390,6 +390,8 @@ class WikiaSearch extends WikiaObject {
 		$query = $this->client->createSelect();
 		$query->setDocumentClass( 'WikiaSearchResult' );
 		
+		$searchConfig->setRequestedFields( array( 'id', 'wid', 'url', self::field( 'title' ) ) );
+		
 		$query	->addFields		( $searchConfig->getRequestedFields() )
 				->removeField	('*')
 			  	->setStart		( $searchConfig->getStart() )
@@ -425,7 +427,6 @@ class WikiaSearch extends WikiaObject {
 		$searchConfig->setResults		( $results )
 					 ->setResultsFound	( $results->getResultsFound() )
 		;
-		
 		return $results;
 	}
 	
