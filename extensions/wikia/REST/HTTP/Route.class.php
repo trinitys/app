@@ -1,7 +1,7 @@
 <?php
 namespace REST\HTTP;
 
-class Route extends \REST\Route {
+class Route extends \REST\base\Route {
 	static private $actionMap = array(
 		'POST' => 'create',
 		'GET' => 'read',

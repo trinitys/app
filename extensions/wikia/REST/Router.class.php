@@ -1,5 +1,4 @@
 <?php
-
 namespace REST;
 
 final class Router {
@@ -15,11 +14,11 @@ final class Router {
 		if ( !is_null( $this->route ) ) {
 			return $this->route->resolve( $this->data );
 		} else {
-			throw new Exception( 'No route' );
+			throw new \Exception( 'No route' );
 		}
 	}
 
-	public function setRoute( Route $route ) {
+	public function setRoute( base\Route $route ) {
 		$this->route = $route;
 	}
 

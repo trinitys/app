@@ -21,4 +21,6 @@ $route = new REST\HTTP\Route();
 $router = new REST\Router();
 $router->setRoute( $route );
 $router->setData( array( $_GET, $_POST ) );
-$router->run();
+$data = $router->run();
+
+var_dump( $data );

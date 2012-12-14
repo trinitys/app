@@ -29,9 +29,22 @@ $wgExtensionCredits['other'] = array(
  * core classes
  */
 $wgAutoloadClasses['REST\Router'] = __DIR__ . "/Router.class.php";
-$wgAutoloadClasses['REST\Route'] = __DIR__ . "/Route.class.php";
+
+/**
+ * base classes and interfaces
+ */
+$wgAutoloadClasses['REST\base\Route'] = __DIR__ . "/base/Route.class.php";
+$wgAutoloadClasses['REST\base\Creatable'] = __DIR__ . "/base/Creatable.interface.php";
+$wgAutoloadClasses['REST\base\Readable'] = __DIR__ . "/base/Readable.interface.php";
+$wgAutoloadClasses['REST\base\Updatable'] = __DIR__ . "/base/Updatable.interface.php";
+$wgAutoloadClasses['REST\base\Deletable'] = __DIR__ . "/base/Deletable.interface.php";
 
 /**
  * HTTP classes
  */
 $wgAutoloadClasses['REST\HTTP\Route'] = __DIR__ . "/HTTP/Route.class.php";
+
+/**
+ * API modules
+ */
+$wgAutoloadClasses['REST\API\v1\Dummy'] = __DIR__ . "/API/v1/Dummy.class.php";
