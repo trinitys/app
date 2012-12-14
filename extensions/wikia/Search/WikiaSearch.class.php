@@ -394,15 +394,14 @@ class WikiaSearch extends WikiaObject {
 				->removeField	('*')
 			  	->setStart		( $searchConfig->getStart() )
 				->setRows		( $searchConfig->getLength() )
-				->addParam		( 'timeAllowed', 500 )
-				->setQuery		( self::valueForField('title', $searchConfig->getQueryNoQuotes( true ).'*' ) )
+				->addParam		( 'timeAllowed', 1000 )
+				->setQuery		( 'title:' . $searchConfig->getQueryNoQuotes( true ) . '*' )
 		;
-		
 		$queries = array(
-				'default'		=> self::valueForField( 'wid', $this->wg->CityId ) . ' AND ns:0',
-			  	'cross-wiki'	=> self::valueForField( '-wid', $this->wg->CityId ) . ' AND ns:0',
-			  	'videos'		=> self::valueForField( 'wid', self::VIDEO_WIKI_ID ) . ' AND is_video:true',
-			  	'images'		=> self::valueForField( 'wid', $this->wg->CityId ) . ' AND ns:6',
+				'default'		=> self::valueForField( 'wid', $this->wg->CityId ) . ' AND '. self::valueForField( 'ns', '0' ),
+			  	'cross-wiki'	=> self::valueForField( 'wid', $this->wg->CityId, array( 'negate' => true ) ) . ' AND '. self::valueForField( 'ns', '0' ),
+			  	'videos'		=> self::valueForField( 'wid', self::VIDEO_WIKI_ID ) . ' AND '. self::valueForField( 'is_video', 'true' ),
+			  	'images'		=> self::valueForField( 'wid', $this->wg->CityId ) . ' AND '. self::valueForField( 'ns', '6' ),
 		);
 
 		$searchConfig->setGroupResults( true )
