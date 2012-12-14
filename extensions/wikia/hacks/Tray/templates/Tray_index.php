@@ -34,7 +34,7 @@
 		
 		<!-- Templates -->
 		<script type="text/template" id="WikiaTray-wiki-match"><li><a href="{{href}}">{{name}}</a></li></script>
-		<script type="text/template" id="WikiaTray-wikia-match"><li><a href="{{href}}">{{name}}</a><span class="wiki">{{wiki}}</span></li></script>
+		<script type="text/template" id="WikiaTray-wikia-match"><li><a href="{{href}}">{{name}}</a> <span class="wiki"><span>on</span> {{wiki}}</span></li></script>
 		<script type="text/template" id="WikiaTray-photos"><li><img src="{{url}}"></li></script>
 	</section>
 	<section class="user">
