@@ -266,6 +266,21 @@ class WikiaSearchController extends WikiaSpecialPageController {
 	    $this->response	->setFormat		( 'json' );
 	}
 	
+	/**
+	 * Delivers a JSON response with grouped autocomplete results
+	 */
+	public function getTray() {
+	    $query = $this->getVal('q');
+	    if (empty($query)) {
+	        throw new Exception('Please provide a query');
+	    }
+	    $searchConfig 	= F::build		('WikiaSearchConfig');
+	    $searchConfig	->setQuery		( $query );
+	    $responseData 	= $this->wikiaSearch->getTray( $searchConfig )->toNestedArray();
+	    $this->response	->setData		( $responseData );
+	    $this->response	->setFormat		( 'json' );
+	}
+	
 	
 	/**
 	 * Controller Helper Methods
