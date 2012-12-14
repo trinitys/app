@@ -60,6 +60,12 @@
 		margin: 7px 0 0 9px;
 		width: 234px;
 	}
+	.loading {
+		display: none;
+		position: absolute;
+		right: 30px;
+		top: 10px;		
+	}
 }
 
 .WikiaTray {
@@ -132,6 +138,7 @@
 		.next, .previous {
 			border-style: solid;
 			cursor: pointer;
+			display: none;
 			position: absolute;
 			top: 35px;			
 			width: 0;

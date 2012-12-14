@@ -19,11 +19,14 @@ var WikiaTray = {
 		if ( this.$search.val().length == 0 ) {
 			this.closeTray();
 		} else {
+			this.openTray( 'search ' );
 			this.autoComplete();
 		}
 	},
 
 	autoComplete: function() {
+		var xhr;
+		
 		$.when(
 			$.loadMustache()
 		).done(function() {
@@ -31,14 +34,15 @@ var WikiaTray = {
 				WikiaTray.xhr.abort();
 			}
 
-			WikiaTray.xhr = $.ajax({
+
+			xhr = $.ajax({
 				url: wgServer + '/wikia.php?controller=WikiaSearch&method=getTray',
 				data: {
 					q: WikiaTray.$search.val()
 				},
 				success: function( data ) {
 					var list;
-
+					WikiaTray.ajaxComplete();
 					WikiaTray.openTray('search');
 
 					// This wiki
@@ -73,9 +77,12 @@ var WikiaTray = {
 					});
 					
 					$('#WikiaTray .photo-carousel').carousel();
+					$('#WikiaTray .photo-carousel-wrapper').find('.next, .previous').show();
 
 				}
 			});
+			
+			WikiaTray.ajaxStart( xhr );
 
 		});
 	},
@@ -163,11 +170,31 @@ var WikiaTray = {
 				'margin-right': -300
 			}, this.speed, function() {
 				$(this).hide();
-			} );
+				$('#WikiaTray').find('.wiki-matches, .wikia-matches, .carousel').empty();
+				$('#WikiaTray .photo-carousel-wrapper').find('.next, .previous').hide();
+			});
 
 		this.open = false;
+	},
+	
+	ajaxStart: function( xhr ) {
+		console.log('ajaxStart');
+		this.xhr = xhr;
+		this.showSpinner();
+	},
+	
+	ajaxComplete: function() {
+		this.xhr = null;
+		this.hideSpinner();
+	},
+	
+	showSpinner: function() {
+		$('#WikiaTrayHeader .loading').show();
+	},
+	
+	hideSpinner: function() {
+		$('#WikiaTrayHeader .loading').hide();		
 	}
-
 };
 
 WikiaTray.init();

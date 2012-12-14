@@ -6,6 +6,7 @@
 	<div class="divider"></div>
 	<div class="tray-header-tab search-tab">
 		<input type="search" placeholder="Search">
+		<img src="http://images.wikia.com/common/skins/common/images/ajax.gif" class="loading">
 	</div>
 </div>
 
