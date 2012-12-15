@@ -19,6 +19,11 @@ class DataReader extends \REST\base\DataReader {
 			$tokens = array_slice( $tokens, 2 );
 
 			foreach( $tokens as &$t ) {
+				//this parameters are in the URL
+				//but not in the querystring so they need
+				//to be manualle decoded
+				$t = urldecode( $t );
+
 				//support list of values for a parameter
 				//e.g lat,lon
 				if ( strpos( $t, ',' ) !== false ) {

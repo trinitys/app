@@ -70,7 +70,10 @@ class Music extends \REST\base\Resource implements \REST\base\Readable {
 					return array(
 						'title' => $info['title'],
 						'artist' => $info['artist'],
-						'lyrics' => $title->getFullUrl()
+						//TODO: create a way to turn a Route in a string
+						//since this won't be valid for other protocols than HTTP
+						//#hardcoding #FTW
+						'lyrics' => wfExpandUrl( '/rest.php/v1/Songs/' . urlencode($info['artist']) . '/' . urlencode( $info['title'] ) ) 
 					);
 				};
 				break;
