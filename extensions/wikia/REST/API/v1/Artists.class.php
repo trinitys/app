@@ -4,7 +4,7 @@ namespace REST\API\v1;
 class Artists extends \REST\base\Resource implements \REST\base\Readable {
 	public function read( $name = null ) {
 		if ( $name === null ) {
-			throw new \Exception( 'Missing parameter' );
+			throw new \Exception( 'Missing parameter "name"' );
 		}
 
 		wfProfileIn( __METHOD__ );
@@ -17,7 +17,8 @@ class Artists extends \REST\base\Resource implements \REST\base\Readable {
 			'*',
 			array(
 				'page_namespace' => $namespaces,
-				'page_title LIKE ' . $dbr->addQuotes( str_replace( array( '%', ':' ) , '_', self::formatName( $name ) ) )
+				'page_title LIKE ' . $dbr->addQuotes( '%' . str_replace( array( '%', ':' ) , '_', self::formatName( $name ) ) . '%' ),
+				'page_title NOT LIKE \'%:%\''
 			),
 			__METHOD__
 		);
@@ -42,7 +43,7 @@ class Artists extends \REST\base\Resource implements \REST\base\Readable {
 	}
 
 	/**
-	 * Taken from extensions/3rdparty/Lyrics/server.php
+	 * Taken from extensions/3rdparty/LyricWiki/server.php
 	 */
 	public static function formatName( $name ) {
 		wfProfileIn( __METHOD__ );
