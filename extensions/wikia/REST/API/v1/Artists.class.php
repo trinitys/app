@@ -2,7 +2,11 @@
 namespace REST\API\v1;
 
 class Artists extends \REST\base\Resource implements \REST\base\Readable {
-	public function read(){
+	public function read( $name = null ){
+		if ( $name === null ) {
+			throw new \Exception( 'Missing parameter "name"' );
+		}
+
 		return null;
 	}
 
