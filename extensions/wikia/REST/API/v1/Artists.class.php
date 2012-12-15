@@ -2,10 +2,12 @@
 namespace REST\API\v1;
 
 class Artists extends \REST\base\Resource implements \REST\base\Readable {
-	public function read( $artistName = null ) {
-		if ( $artistName === null ) {
-			throw new \Exception( 'artistName is required');
+	public function read( $name = null ) {
+		if ( $name === null ) {
+			throw new \Exception( 'Missing parameter' );
 		}
+
+		wfProfileIn( __METHOD__ );
 
 		$dbr = wfGetDB( DB_SLAVE );
 		$namespaces = array( NS_MAIN, NS_GRACENOTE );
@@ -15,26 +17,41 @@ class Artists extends \REST\base\Resource implements \REST\base\Readable {
 			'*',
 			array(
 				'page_namespace' => $namespaces,
-				'page_title LIKE ' . $dbr->addQuotes( str_replace( ' ', '_', ucwords( $artistName ) ) )
+				'page_title LIKE ' . $dbr->addQuotes( str_replace( array( '%', ':' ) , '_', self::formatName( $name ) ) )
 			),
 			__METHOD__
-			/*OPTIONS*/
 		);
 
 		$items = array();
 
 		while ( $row = $dbr->fetchObject( $rows ) ) {
-			$t = \Title::newFromRow( $row );
+			$title = \Title::newFromRow( $row );
 
-			if ( $t instanceof \Title && $t->exists() ) {
+			if ( $title instanceof \Title && $title->exists() ) {
 				$items[] = array(
-					'title' => $t->getText(),
-					'url' => $t->getFullUrl()
+					'name' => $title->getText(),
+					'discography' => $title->getFullUrl()
 				);
 			}
 		}
 
 		$dbr->freeResult( $rows );
+
+		wfProfileOut( __METHOD__ );
 		return $items;
+	}
+
+	/**
+	 * Taken from extensions/3rdparty/Lyrics/server.php
+	 */
+	public static function formatName( $name ) {
+		wfProfileIn( __METHOD__ );
+
+		$artistName = rawurldecode( ucwords( $name ) );
+		$artistName = preg_replace( '/([-\("\.])([a-z])/e', '"$1".strtoupper("$2")', $artistName );
+		$artistName = str_replace( " ", "_", $artistName );
+
+		wfProfileOut( __METHOD__ );
+		return $artistName;
 	}
 }
