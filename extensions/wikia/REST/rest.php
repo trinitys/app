@@ -18,15 +18,20 @@ if ( $wgProfiler instanceof Profiler ) {
 	$wgProfiler->setTemplated( true );
 }
 
-$clientHeaders = apache_request_headers();
-$prettyPrint = (
-	isset( $clientHeaders['Accept'] ) &&
-	preg_match( '#^(text/html|application/xhtml+xml|application/xml)#i', $clientHeaders['Accept'] ) > 0
-);
+
+if ( function_exists( 'apache_request_headers' ) ) {
+	$clientHeaders = apache_request_headers();
+	$prettyPrint = (
+		isset( $clientHeaders['Accept'] ) &&
+		preg_match( '#^(text/html|application/xhtml+xml|application/xml)#i', $clientHeaders['Accept'] ) > 0
+	);
+} else {
+	$prettyPrint = false;
+}
 
 $route = new REST\HTTP\Route();
 $reader = new REST\HTTP\DataReader( $route->getAction() );
-$writer = new REST\JSON\DataWriter();
+$writer = new REST\JSON\DataWriter( $prettyPrint );
 $router = new REST\Router();
 
 $router->setRoute( $route );
@@ -36,7 +41,7 @@ $router->setWriter( $writer );
 $router->run();
 
 header( "Content-Type: {$writer->getContentType()}; charset={$writer->getCharset()}" );
-echo( $writer->toString( $prettyPrint ) );
+echo( $writer->toString() );
 
 //print out profiling data if requested
 wfLogProfilingData();

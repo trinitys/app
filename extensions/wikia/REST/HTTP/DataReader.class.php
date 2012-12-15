@@ -6,6 +6,9 @@ class DataReader extends \REST\base\DataReader {
 		$qsData = $_GET;
 		$data = array();
 
+		//TODO: parsing the path should be moved
+		//to a reusable component
+
 		//PHP puts anything after filename.php/ (e.g. rest.php/aaa)
 		//into a "title" key in the querystring array
 		$tokens = explode( '/', $qsData['title'] );
