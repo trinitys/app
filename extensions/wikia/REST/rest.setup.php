@@ -61,3 +61,4 @@ $wgAutoloadClasses['REST\JSON\DataWriter'] = __DIR__ . "/JSON/DataWriter.class.p
  * API modules
  */
 $wgAutoloadClasses['REST\API\v1\Dummy'] = __DIR__ . "/API/v1/Dummy.class.php";
+$wgAutoloadClasses['REST\API\v1\Artists'] = __DIR__ . "/API/v1/Artists.class.php";
