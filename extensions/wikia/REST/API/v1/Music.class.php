@@ -1,0 +1,113 @@
+<?php
+namespace REST\API\v1;
+
+class Music extends \REST\base\Resource implements \REST\base\Readable {
+	static private $types = array( 'artists', 'albums', 'songs' );
+
+	public function read( $type = null, $name = null ) {
+		if ( $type === null ) {
+			throw new \Exception( 'Missing parameter "type"' );
+		}
+
+		if ( !in_array( $type, self::$types ) ) {
+			throw new \Exception( 'Unsupported value for parameter "type"' );
+		}
+
+		if ( $name === null ) {
+			throw new \Exception( 'Missing parameter "name"' );
+		}
+
+		wfProfileIn( __METHOD__ );
+
+		$dbr = wfGetDB( DB_SLAVE );
+		$where = array( 'page_namespace' => array( NS_MAIN, NS_GRACENOTE ) );
+		$parseClass = null;
+		$processData = null;
+
+		switch ( $type ) {
+			case 'artists':
+				$where[] = 'page_title LIKE ' . $dbr->addQuotes( '%' . self::normalizeForSearch( Artists::formatTitle( $name ) ) . '%' );
+				$where[] = 'page_title NOT LIKE \'%:%\'';
+
+				$processData = function( \Title $title ) {
+					return array(
+						'name' => $title->getText(),
+						'albums' => $title->getFullUrl()
+					);
+				};
+				break;
+			case 'albums':
+				$where[] = 'page_title LIKE ' . $dbr->addQuotes( '%:%' . self::normalizeForSearch( Albums::formatTitle( $name ) ) . '%\_(____)'
+				);
+
+				$processData = function( \Title $title ) {
+					//TODO: add granularity by throwing a different
+					//kind of exception when the data in the parentesis is
+					//not an year in Albums::parseTitle
+					try {
+						$info = \REST\API\v1\Albums::parseTitle( $title->getText() );
+					} catch( \Exception $e ) {
+						//many songs have stuff in parentesis
+						//at the end like (feat. XYZ)
+						return null;
+					}
+
+					return array(
+						'title' => $info['title'],
+						'artist' => $info['artist'],
+						'year' => $info['year'],
+						'songs' => $title->getFullUrl()
+					);
+				};
+				break;
+			case 'songs':
+				$where[] = 'page_title LIKE ' . $dbr->addQuotes( '%:%' . self::normalizeForSearch( Songs::formatTitle( $name ) ) . '%' );
+				$where[] = 'page_title NOT LIKE \'%\_(____)\'';
+
+				$processData = function( \Title $title ) {
+					$info = \REST\API\v1\Songs::parseTitle( $title->getText() );
+
+					return array(
+						'title' => $info['title'],
+						'artist' => $info['artist'],
+						'lyrics' => $title->getFullUrl()
+					);
+				};
+				break;
+		}
+
+		$rows = $dbr->select(
+			'page',
+			'*',
+			$where,
+			__METHOD__
+		);
+
+		$items = array();
+
+		while ( $row = $dbr->fetchObject( $rows ) ) {
+			$title = \Title::newFromRow( $row );
+
+			if ( $title instanceof \Title && $title->exists() ) {
+				$info = $processData( $title );
+
+				if ( $info !== null ) {
+					$items[] = $info;
+				}
+			}
+		}
+
+		$dbr->freeResult( $rows );
+
+		wfProfileOut( __METHOD__ );
+		return $items;
+	}
+
+	static private function normalizeForSearch( $value ) {
+		return str_replace(
+			array( '_', '%', ':' ) ,
+			array( '\_', '\%', '_' ),
+			$value
+		);
+	}
+}

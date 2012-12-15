@@ -1,7 +1,7 @@
 <?php
 namespace REST\API\v1;
 
-class Songs extends \REST\base\Resource implements \REST\base\Readable {
+class Albums extends \REST\base\Resource implements \REST\base\Readable {
 	public function read(){
 		return null;
 	}
@@ -9,14 +9,14 @@ class Songs extends \REST\base\Resource implements \REST\base\Readable {
 	/**
 	 * Taken from extensions/3rdparty/LyricWiki/server.php
 	 */
-	public static function formatTitle( $title, $artist = null ) {
+	public static function formatTitle( $title, $artist = null, $year = null ) {
 		wfProfileIn( __METHOD__ );
 
-		if ( $artist !== null ) {
-			$title = "{$artist}:{$title}";
+		if ( $year !== null ) {
+			$title += "_({$year})";
 		}
 
-		$songTitle = Artists::formatTitle( $title );
+		$songTitle = Songs::formatTitle( $title, $artist );
 
 		wfProfileOut( __METHOD__ );
 		return $songTitle;
@@ -25,12 +25,13 @@ class Songs extends \REST\base\Resource implements \REST\base\Readable {
 	public static function parseTitle( $title ) {
 		wfProfileIn( __METHOD__ );
 
-		$count = preg_match( "/^([^:]+):(.*)$/", $title, $matches );
+		$count = preg_match( "/^([^:]+):(.*) \(([0-9]{4,})\)$/", $title, $matches );
 
 		if ( $count > 0 ) {
 			$info = array(
 				'artist' => $matches[1],
-				'title' => $matches[2]
+				'title' => $matches[2],
+				'year' => $matches[3]
 			);
 
 			wfProfileOut( __METHOD__ );
