@@ -50,7 +50,7 @@ class Music extends \REST\base\Resource implements \REST\base\Readable {
 					//kind of exception when the data in the parentesis is
 					//not an year in Albums::parseTitle
 					try {
-						$info = \REST\API\v1\Albums::parseTitle( $title->getText() );
+						$info = Albums::parseTitle( $title->getText() );
 					} catch( \Exception $e ) {
 						//many songs have stuff in parentesis
 						//at the end like (feat. XYZ)
@@ -61,7 +61,10 @@ class Music extends \REST\base\Resource implements \REST\base\Readable {
 						'title' => $info['title'],
 						'artist' => $info['artist'],
 						'year' => $info['year'],
-						'songs' => $title->getFullUrl()
+						//TODO: create a way to turn a Route in a string
+                                                //since this won't be valid for other protocols than HTTP
+                                                //#hardcoding #FTW
+						'songs' => wfExpandUrl( '/rest.php/v1/Albums/' . urlencode( $info['year'] ) . '/' . urlencode( $info['artist'] ) . '/' . urlencode( $info['title'] ) )
 					);
 				};
 				break;

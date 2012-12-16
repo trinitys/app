@@ -23,11 +23,14 @@ class Artists extends \REST\base\Resource implements \REST\base\Readable {
 			$text = $page->getRawText();
 			$items = array();
 
-			if ( preg_match_all( "/==\[\[[^\]]+:([^\]]+)(\|([^\]]+))?\]\]==/U", $text, $matches, PREG_SET_ORDER ) > 0 ) {
+			if ( preg_match_all( "/^==\[\[[^\]]+:([^\|]+)\(([0-9]{4,})\)[^\]]*\]\]==$/mU", $text, $matches, PREG_SET_ORDER ) > 0 ) {
 				foreach ( $matches as $item ) {
 					$items[] = array(
-						'title' => ( isset( $item[3] ) ) ? $item[3] : $item[1],
-						'songs' => wfExpandUrl( '/rest.php/v1/Albums/' . urlencode( $artistName ) . '/' . urlencode( $item[1] ) )
+						'title' => $item[1],
+						//TODO: create a way to turn a Route in a string
+                                                //since this won't be valid for other protocols than HTTP
+                                                //#hardcoding #FTW
+						'songs' => wfExpandUrl( '/rest.php/v1/Albums/' . urlencode( $item[2] ) . '/' . urlencode( $artistName ) . '/' . urlencode( $item[1] ) )
 					);
 				}
 			} else {
