@@ -8,8 +8,8 @@ class Songs extends \REST\base\Resource implements \REST\base\Readable {
 		}
 
 		if ( $songTitle === null ) {
-                        throw new \Exception( 'Missing parameter "songTitle"' );
-                }
+			throw new \Exception( 'Missing parameter "songTitle"' );
+		}
 
 		wfProfileIn( __METHOD__ );
 
