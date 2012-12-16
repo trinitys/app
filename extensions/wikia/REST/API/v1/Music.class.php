@@ -22,7 +22,7 @@ class Music extends \REST\base\Resource implements \REST\base\Readable {
 		wfProfileIn( __METHOD__ );
 
 		$dbr = wfGetDB( DB_SLAVE );
-		$where = array( 'page_namespace' => array( NS_MAIN, NS_GRACENOTE ) );
+		$where = array( 'page_namespace' => NS_MAIN );
 		$parseClass = null;
 		$processData = null;
 
@@ -34,7 +34,10 @@ class Music extends \REST\base\Resource implements \REST\base\Readable {
 				$processData = function( \Title $title ) {
 					return array(
 						'name' => $title->getText(),
-						'albums' => $title->getFullUrl()
+						//TODO: create a way to turn a Route in a string
+                                                //since this won't be valid for other protocols than HTTP
+                                                //#hardcoding #FTW
+                                                'discography' => wfExpandUrl( '/rest.php/v1/Artists/' . urlencode( $title->getPrefixedText() ) )
 					);
 				};
 				break;

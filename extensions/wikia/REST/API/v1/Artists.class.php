@@ -2,12 +2,45 @@
 namespace REST\API\v1;
 
 class Artists extends \REST\base\Resource implements \REST\base\Readable {
-	public function read( $name = null ){
-		if ( $name === null ) {
-			throw new \Exception( 'Missing parameter "name"' );
+	public function read( $artistName = null ) {
+		if ( $artistName === null ) {
+			throw new \Exception( 'Missing parameter "artistName"' );
 		}
 
-		return null;
+		wfProfileIn( __METHOD__ );
+
+		$artistName = self::formatTitle( $artistName );
+		$title = \Title::newFromText( self::formatTitle( $artistName ), NS_MAIN );
+
+		if ( $title instanceof \Title && $title->exists() ) {
+			$page = \WikiPage::factory( $title );
+			$redirectTarget = $page->getRedirectTarget();
+
+			if ( $redirectTarget instanceof \Title ) {
+				$page = \WikiPage::factory( $redirectTarget );
+			}
+
+			$text = $page->getRawText();
+			$items = array();
+
+			if ( preg_match_all( "/==\[\[[^\]]+:([^\]]+)(\|([^\]]+))?\]\]==/U", $text, $matches, PREG_SET_ORDER ) > 0 ) {
+				foreach ( $matches as $item ) {
+					$items[] = array(
+						'title' => ( isset( $item[3] ) ) ? $item[3] : $item[1],
+						'songs' => wfExpandUrl( '/rest.php/v1/Albums/' . urlencode( $artistName ) . '/' . urlencode( $item[1] ) )
+					);
+				}
+			} else {
+				wfProfileOut( __METHOD__ );
+				throw new \Exception( 'Discography not found' );
+			}
+
+			wfProfileOut( __METHOD__ );
+			return $items;
+		} else {
+			wfProfileOut( __METHOD__ );
+			throw new \Exception( 'Artist not found' );
+		}
 	}
 
 	/**
