@@ -28,8 +28,8 @@ class Artists extends \REST\base\Resource implements \REST\base\Readable {
 					$items[] = array(
 						'title' => $item[1],
 						//TODO: create a way to turn a Route in a string
-                                                //since this won't be valid for other protocols than HTTP
-                                                //#hardcoding #FTW
+						//since this won't be valid for other protocols than HTTP
+						//#hardcoding #FTW
 						'songs' => wfExpandUrl( '/rest.php/v1/Albums/' . urlencode( $item[2] ) . '/' . urlencode( $artistName ) . '/' . urlencode( $item[1] ) )
 					);
 				}
