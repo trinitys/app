@@ -2,14 +2,16 @@
 namespace REST\API\v1;
 
 class Music extends \REST\base\Resource implements \REST\base\Readable {
-	static private $types = array( 'artists', 'albums', 'songs' );
+	const TYPE_ARTISTS = 'Artists';
+	const TYPE_ALBUMS = 'Albums';
+	const TYPE_SONGS = 'Songs';
 
 	public function read( $type = null, $name = null ) {
 		if ( $type === null ) {
 			throw new \Exception( 'Missing parameter "type"' );
 		}
 
-		if ( !in_array( $type, self::$types ) ) {
+		if ( !( $type == self::TYPE_ARTISTS || $type == self::TYPE_ALBUMS || $type == self::TYPE_SONGS ) ) {
 			throw new \Exception( 'Unsupported value for parameter "type"' );
 		}
 
@@ -25,7 +27,7 @@ class Music extends \REST\base\Resource implements \REST\base\Readable {
 		$processData = null;
 
 		switch ( $type ) {
-			case 'artists':
+			case self::TYPE_ARTISTS:
 				$where[] = 'page_title LIKE ' . $dbr->addQuotes( '%' . self::normalizeForSearch( Artists::formatTitle( $name ) ) . '%' );
 				$where[] = 'page_title NOT LIKE \'%:%\'';
 
@@ -36,7 +38,7 @@ class Music extends \REST\base\Resource implements \REST\base\Readable {
 					);
 				};
 				break;
-			case 'albums':
+			case self::TYPE_ALBUMS:
 				$where[] = 'page_title LIKE ' . $dbr->addQuotes( '%:%' . self::normalizeForSearch( Albums::formatTitle( $name ) ) . '%\_(____)'
 				);
 
@@ -60,7 +62,7 @@ class Music extends \REST\base\Resource implements \REST\base\Readable {
 					);
 				};
 				break;
-			case 'songs':
+			case self::TYPE_SONGS:
 				$where[] = 'page_title LIKE ' . $dbr->addQuotes( '%:%' . self::normalizeForSearch( Songs::formatTitle( $name ) ) . '%' );
 				$where[] = 'page_title NOT LIKE \'%\_(____)\'';
 
