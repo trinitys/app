@@ -24,6 +24,6 @@ class DataWriter extends \REST\base\DataWriter {
 	}
 
 	public function toString() {
-		return json_encode( $this->content, ( !empty( $this->prettyPrint ) ) ? JSON_PRETTY_PRINT : null );
+		return json_encode( $this->content, ( ( !empty( $this->prettyPrint ) ) ? JSON_PRETTY_PRINT : 0 ) | JSON_UNESCAPED_UNICODE );
 	}
 }
