@@ -49,7 +49,7 @@
 			<li><a href="#">Message Wall</a></li>
 			<li><a href="#">Contributions</a></li>
 		</ul>
-		<h1>Message Wall <span class="reddot-wrapper"><span class="reddot">2</span></span></h1>
+		<h1>Notifications <span class="reddot-wrapper"><span class="reddot">2</span></span></h1>
 		<h2>Muppet Wiki</h2>
 		<ul class="messages">
 			<li>
