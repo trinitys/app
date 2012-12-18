@@ -50,6 +50,25 @@ $app->registerHook('BeforeDisplayNoArticleText', 'UserProfilePageController', 'o
 $app->registerHook('ArticleSaveComplete', 'Masthead', 'userMastheadInvalidateCache');
 
 /**
+ * Ajax
+ */
+$wgAjaxExportList[] = 'UserProfilePageAjaxSaveNote';
+
+
+function UserProfilePageAjaxSaveNote ( $pageName, $note ) {
+    global $wgUser;
+    if ( $wgUser->isAllowed( 'editaccount' ) ) {
+        if ( substr($pageName, 0, 5 ) == 'User:') {
+        $editedUser = User::newFromName(substr($pageName, 5 ));
+        $editedUser->setOption( 'aboutnote', $note );
+        $editedUser->saveSettings();
+        } else return json_encode(substr($pageName, 0, 5 ));
+    }
+    return json_encode('success');
+}
+
+
+/**
  * messages
  */
 $app->registerExtensionMessageFile('UserProfilePageV3', $dir . '/UserProfilePage.i18n.php');
@@ -107,5 +126,10 @@ $wgGroupPermissions['helper']['deleteprofilev3'] = true;
 $wgGroupPermissions['staff']['editprofilev3'] = true;
 $wgGroupPermissions['vstf']['editprofilev3'] = true;
 $wgGroupPermissions['helper']['editprofilev3'] = true;
+
+//new right to edit account
+$wgAvailableRights[] = 'editaccount';
+$wgGroupPermissions['*']['editaccount'] = false;
+$wgGroupPermissions['util']['editaccount'] = true;
 
 $wgSpecialPageGroups['RemoveUserAvatar'] = 'users';

@@ -85,6 +85,7 @@ class UserProfilePageController extends WikiaController {
 
 		$this->app->wg->Out->addStyle(AssetsManager::getInstance()->getSassCommonURL('extensions/wikia/UserProfilePageV3/css/UserProfilePage.scss'));
 		$this->wg->Out->addScriptFile($this->wg->ExtensionsPath . '/wikia/UserProfilePageV3/js/UserProfilePage.js');
+		$this->wg->Out->addScriptFile($this->wg->ExtensionsPath . '/wikia/UserProfilePageV3/js/UserProfilePageStaffNotes.js');
 
 		$sessionUser = $this->wg->User;
 
@@ -140,6 +141,14 @@ class UserProfilePageController extends WikiaController {
 		if ( $this->app->checkSkin( 'wikiamobile' ) ) {
 			$this->overrideTemplate( 'WikiaMobileRenderUserIdentityBox' );
 		}
+
+        if ( $this->app->wg->User->isAllowed( 'editaccount' ) ) {
+            if ( $user->getOption( 'aboutnote' )) {
+                $this->setVal( 'aboutnote', $user->getOption( 'aboutnote') );
+            } else {
+                $this->setVal( 'aboutnote', "There's no note about this user yet" );
+            }
+        }
 
 		$this->app->wf->ProfileOut(__METHOD__);
 	}

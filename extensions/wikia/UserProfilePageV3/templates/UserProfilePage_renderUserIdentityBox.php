@@ -30,10 +30,28 @@
 				<h1 itemprop="name"><?= $user['name']; ?></h1>
 			<? endif; ?>
 			<? if( !empty($user['tags']) ): ?>
-				<?php foreach($user['tags'] as $tag): ?>
-					<span class="tag"><?= $tag; ?></span>
-				<?php endforeach; ?>
-			<? endif; ?>
+            <?php foreach($user['tags'] as $tag): ?>
+                <span class="tag"><?= $tag; ?></span>
+                <?php endforeach; ?>
+            <? endif; ?>
+            <? if( !empty($aboutnote) ): ?>
+                <div id="staffNotes" class="note">
+                    <span id="noteEdit">
+				<img src="<?= $wgBlankImgUrl ?>" class="sprite edit-pencil"><span class="link" onclick="loadEditNoteForm()"><?= wfMsg('user-identity-box-edit'); ?></span>
+			</span>
+                    <div class="note-button">Notes</div>
+                    <div class="note-content">
+                        <span class="note-txt"><?= $aboutnote ?></span>
+                    <form id="editNote">
+                        <textarea class="mirroredText" style="overflow:visible; background:transparent"></textarea>
+                        <div id="csButtonsContainer" class="buttons">
+                            <input type="button" id="aboutnoteSave" onclick="noteSave()" value="Save">
+                            <input type="button" id="aboutnoteCancel" onclick="noteCancel()" value="Cancel" class="secondary">
+                        </div>
+                    </form>
+                    </div>
+                </div>
+            <? endif; ?>
 		</hgroup>
 
 		<? if( $canEditProfile ): ?>

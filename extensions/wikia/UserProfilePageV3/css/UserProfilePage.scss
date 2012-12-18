@@ -121,7 +121,7 @@ $color-user-profile-gradient-bottom: desaturate(darken($color-menu-highlight, 5%
 			@include border-radius-nw($radius-user-profile-masthead);
 			@include border-radius-ne($radius-user-profile-masthead);
 			@include linear-gradient($color-buttons, top, $color-button-highlight, 0%, $color-buttons, 100%);
-			color: $color-button-text;
+            color: $color-text;
 			overflow: auto;
 			padding: 8px 25px;
 		}
@@ -144,6 +144,74 @@ $color-user-profile-gradient-bottom: desaturate(darken($color-menu-highlight, 5%
 				margin-left: 0;
 			}
 		}
+        .note {
+            float: right;
+            text-align: right;
+            .note-button {
+                @include border-radius(3px);
+                background: mix(#ff0000, $color-page, 80%);
+                display: inline-block;
+                padding: 2px 5px;
+                margin-left: 5px;
+                text-transform: uppercase;
+                position: relative;
+                height:20px;
+                line-height:20px;
+                z-index: 4;
+                cursor:default;
+                color: $color-button-text;
+                &:hover + .note-content {
+                    display:block;
+                }
+            }
+            .note-content {
+                background: $color-page;
+                @include linear-gradient($color-module-shadow, top, $color-page, 50%, $color-module-shadow, 100%);
+                border: 1px solid $color-page-border;
+                text-align: left;
+                position: absolute;
+                top: 26px;
+                right: 0;
+                width: 300px;
+                padding: 15px 10px 10px;
+                margin-right: 10px;
+                z-index: 3;
+                display: none;
+                &:hover {
+                  display:block;
+                }
+            }
+          #noteEdit {
+            display: none;
+            .link {
+                cursor: pointer;
+            }
+          }
+          #editNote {
+            display: none;
+          }
+          .mirroredText {
+              color: $color-text;
+              width: 100%;
+              font-size: 12px;
+              font-family: sans-serif;
+              border: 1px solid $color-page-border;
+              height: 100px;
+            }
+          .buttons {
+            //background: $color-epl-page-secondary;
+          }
+            #noteEdit {
+              //display:none;
+            }
+            &:hover #noteEdit {
+                display:inline-block;
+            }
+            &:hover .note-content {
+                display:block;
+            }
+
+        }
 		h2 {
 			display: inline;
 			font-size: 24px;
@@ -155,7 +223,7 @@ $color-user-profile-gradient-bottom: desaturate(darken($color-menu-highlight, 5%
 			}
 		}
 	}
-	
+
 	.masthead-info-lower {
 		position: relative;
 		&:before {
@@ -171,7 +239,7 @@ $color-user-profile-gradient-bottom: desaturate(darken($color-menu-highlight, 5%
 			width: 1px;
 		}
 	}
-	
+
 	.tally {
 		margin-bottom: 25px;
 		em {
@@ -183,7 +251,7 @@ $color-user-profile-gradient-bottom: desaturate(darken($color-menu-highlight, 5%
 		@include clearfix;
 		li {
 			float: left;
-			margin-right: 1em;		
+			margin-right: 1em;
 		}
 		.icon {
 			@include border-radius(50px);
@@ -196,10 +264,10 @@ $color-user-profile-gradient-bottom: desaturate(darken($color-menu-highlight, 5%
 				background-position: 0 $y-user-profile-masthead-links-icon;
 			}
 			&.website {
-				background-position: -16px $y-user-profile-masthead-links-icon;			
+				background-position: -16px $y-user-profile-masthead-links-icon;
 			}
 			&.facebook {
-				background-position: -32px $y-user-profile-masthead-links-icon;			
+				background-position: -32px $y-user-profile-masthead-links-icon;
 			}
 		}
 		.zero {
@@ -208,7 +276,7 @@ $color-user-profile-gradient-bottom: desaturate(darken($color-menu-highlight, 5%
 				background-color: $color-alternate-text;
 			}
 		}
-	}	
+	}
 
 	.wikis {
 		margin-top: 13px;
@@ -235,7 +303,7 @@ $color-user-profile-gradient-bottom: desaturate(darken($color-menu-highlight, 5%
 			}
 		}
 	}
-	
+
 	.details {
 		@include bodytext;
 		font-size: 14px;
@@ -253,13 +321,13 @@ $color-user-profile-gradient-bottom: desaturate(darken($color-menu-highlight, 5%
 			text-transform: uppercase;
 		}
 	}
-	
+
 	&.zero-state {
 		.masthead-info > div {
 			padding-top: 10px;
 			padding-bottom: 10px;
 		}
-		
+
 		#userIdentityBoxEdit {
 			display: block;
 		}
