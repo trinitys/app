@@ -1,4 +1,4 @@
-<div class="BreadCrumbs">
+<nav class="BreadCrumbs" itemprop="breadcrumb">
 	<? foreach($path as $key => $val ): ?>
 		<? if(!empty($val['url'])):?>
 			<a href="<?= $val['url'] ?>" title="<?= $val['title'] ?>"><?= $val['title'] ?></a>
@@ -18,4 +18,4 @@
     <? if (!empty($isClosed)): ?>
     	<span class="removed">(<?= wfMsg('wall-thread-closed') ?>)</span>
     <? endif; ?>
-</div>
+</nav>
