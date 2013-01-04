@@ -858,7 +858,7 @@
 		requires: ['ui'],
 
 		// These events are proxied from ck and fired on the editor with the 'ck' prefix
-		proxyEvents: ['blur', 'focus', 'instanceReady', 'mode', 'modeSwitch', 'modeSwitchCancelled', 'themeLoaded', 'wysiwygModeReady'],
+		proxyEvents: ['blur', 'focus', 'instanceReady', 'mode', 'modeSwitch', 'modeSwitchCancelled', 'themeLoaded', 'wysiwygModeReady', 'sourceModeReady'],
 
 		// These methods will be publicly available on the editor instance
 		proxyMethods: ['getContent', 'setContent', 'getEditbox', 'getEditboxWrapper', 'getEditorElement', 'editorFocus', 'editorBlur'],

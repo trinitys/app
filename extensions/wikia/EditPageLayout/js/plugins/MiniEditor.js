@@ -6,7 +6,7 @@
 		isReady: false,
 
 		proxyEvents: [
-			'ck-instanceReady', 'ck-wysiwygModeReady', 'editorActivated',
+			'ck-instanceReady', 'ck-wysiwygModeReady','ck-sourceModeReady', 'editorActivated',
 			'editorAfterActivated', 'editorBeforeReady', 'editorBlur',
 			'editorClear', 'editorDeactivated', 'editorAfterDeactivated',
 			'editorFocus', 'editorReady', 'editorReset', 'editorResize'
@@ -58,6 +58,32 @@
 		// Re-bind event listenners for elements inside wysiwyg iframe
 		'ck-wysiwygModeReady': function() {
 			this.editor.getEditbox().bind('keyup.MiniEditor', this.proxy(this.editorResize)).keyup();
+		},
+
+		// Add support for mini editor resizing in visual editor source mode
+		'ck-sourceModeReady': function() {
+			var maxHeight = this.editor.config.maxHeight,
+				minHeight = this.editor.config.minHeight,
+				textarea = this.editor.getEditbox(),
+				textareaWrapper = this.editor.getEditboxWrapper(),
+				textareaWrapperHeight = textareaWrapper.height();
+
+			// prepare attributes of textarea and its wrapper for jQuery autoresize plugin
+			if (textarea.height() < textareaWrapperHeight) {
+				textarea.height(textareaWrapperHeight)
+			}
+			textareaWrapper.attr('style', '').css('overflow', 'visible');
+
+			// autoresize plugin is needed to change height of the textarea based on its content
+			textarea.autoResize({
+				minFocus:minHeight,
+				minContent: minHeight,
+				limit: maxHeight,
+				limitEmpty: maxHeight,
+				extraSpace: 0,
+				minAnim: 0,
+				min: minHeight
+			});
 		},
 
 		editorActivated: function(event) {

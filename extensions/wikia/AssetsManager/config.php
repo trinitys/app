@@ -705,6 +705,7 @@ $config['mini_editor_js'] = array(
 		// MediaWiki Edit stack
 		'//resources/jquery/jquery.byteLimit.js',
 		'//resources/jquery/jquery.textSelection.js',
+		'//resources/wikia/libraries/jquery/autoresize/jquery.autoresize.js',
 		'//resources/mediawiki.action/mediawiki.action.edit.js',
 		// Edit Page Layout
 		'//extensions/wikia/EditPageLayout/js/editor/WikiaEditor.js',
