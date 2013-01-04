@@ -80,8 +80,6 @@
 				minContent: minHeight,
 				limit: maxHeight,
 				limitEmpty: maxHeight,
-				extraSpace: 0,
-				minAnim: 0,
 				min: minHeight
 			});
 		},
