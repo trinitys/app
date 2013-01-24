@@ -93,7 +93,8 @@ class UserLoginSpecialController extends WikiaSpecialPageController {
 
 		// process login
 		if ( $this->wg->request->wasPosted() ) {
-			$action = $this->request->getVal( 'action', null );
+			$action = $this->request->getVal( 'loginAction', null );
+			
 			if (
 				$action === $this->wf->Msg('userlogin-forgot-password') ||
 				$action === $this->wf->Msg('wikiamobile-sendpassword-label')
@@ -119,7 +120,6 @@ class UserLoginSpecialController extends WikiaSpecialPageController {
 				$this->msg = $response->getVal( 'msg', null );
 
 				$this->response->getView()->setTemplate( 'UserLoginSpecial', 'changePassword' );
-
 			} else {	// login
 				$response = $this->app->sendRequest( 'UserLoginSpecial', 'login' );
 

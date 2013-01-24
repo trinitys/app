@@ -54,6 +54,11 @@
 				'label' => wfMsg('userlogin-retypenew'),
 				'isInvalid' => !empty($errParam) && $errParam === 'retype',
 				'errorMsg' => !empty($msg) ? $msg : ''
+			),
+			array(
+				'type' => 'hidden',
+				'name' => 'loginAction',
+				'value' => wfMsg('resetpass_submit'),
 			)
 		),
 		'submits' => array(
