@@ -57,7 +57,7 @@
 						<?php foreach( $results as $result ): ?>
 							<?php
 								$pos++;
-								if($result instanceof WikiaSearchResult) {
+								if($result instanceof WikiaSearchResultSetSingleton) {
 									echo $app->getView( 'WikiaSearch', 'CorporateWiki_result', array(
 										'result' => $result,
 										'gpos' => 0,

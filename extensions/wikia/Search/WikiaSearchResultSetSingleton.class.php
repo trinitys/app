@@ -26,4 +26,39 @@ class WikiaSearchResultSetSingleton extends WikiaSearchResultSet
 		$this->setHeader( 'hot',                $vizData['hot'] );
 		$this->setHeader( 'description',        $vizData['description'] );
 	}
+	public function getArticlesNum() {
+		return $this->getVar( 'cityArticlesNum' );
+	}
+
+	public function getImagesNum() {
+		return $this->getVar( 'cityImagesNum' );
+	}
+
+	public function getVideosNum() {
+		return $this->getVar( 'cityVideosNum' );
+	}
+
+	public function getCityId() {
+		return $this->getVar( 'cityId' );
+	}
+
+	public function getTitle() {
+		return $this->getVar( 'cityTitle' );
+	}
+
+	public function getText() {
+		return $this->getVar( 'description' );
+	}
+
+	public function getUrl() {
+		return $this->getVar( 'cityUrl' );
+	}
+
+	public function getTextUrl() {
+		return $this->getVar( 'cityUrl' );
+	}
+
+	public function getVar( $name ) {
+		return $this->getHeader( $name );
+	}
 }

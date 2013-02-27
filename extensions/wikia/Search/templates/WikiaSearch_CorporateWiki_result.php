@@ -29,9 +29,9 @@ $result->getTitle(), $result->getVar('wikititle')) : $result->getTitle();*/ ?>
 				<li><a href="http://<?= $result['host'] .'/wiki/Special:Search?search='.urlencode($query).'&fulltext=Search'; ?>"><?= wfMsg( 'wikiasearch2-search-on-wiki') ?></a></li>
 			</ul>
 			<ul class="wiki-statistics">
-				<li>19k Pages</li>
-				<li>12k Photos</li>
-				<li>20 Videos</li>
+				<li><?= $result->getArticlesNum(); ?> Pages</li>
+				<li><?= $result->getImagesNum(); ?> Photos</li>
+				<li><?= $result->getVideosNum(); ?> Videos</li>
 			</ul>
 		</div>
 
