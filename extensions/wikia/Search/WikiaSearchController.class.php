@@ -68,6 +68,8 @@ class WikiaSearchController extends WikiaSpecialPageController {
 
 		if($this->isCorporateWiki()) {
 			OasisController::addBodyClass('inter-wiki-search');
+			// overwrite templete for cross wiki search
+			$this->overrideTemplate( 'CorporateWiki_index' );
 		}
 
 		if( $searchConfig->getQueryNoQuotes( true ) ) {
