@@ -359,7 +359,7 @@ class WikiaSearch extends WikiaObject {
 	/**
 	 * Strategy for getting the right kind of match
 	 * @param  WikiaSearchConfig $config
-	 * @return WikiaSearchArticleMatch|WikiSearchWikiMatch|null
+	 * @return Wikia\Search\Match\Article|WikiSearchWikiMatch|null
 	 */
 	public function getMatch( WikiaSearchConfig $config ) {
 		return $config->isInterWiki() ? $this->getWikiMatch( $config ) : $this->getArticleMatch( $config );
@@ -373,60 +373,35 @@ class WikiaSearch extends WikiaObject {
 	 * @see    WikiaSearchTest::testGetArticleMatchWithMatchFirstCall
 	 * @see    WikiaSearchTest::testGetArticleMatchWithMatchFirstCallMismatchedNamespaces
 	 * @param  WikiaSearchConfig $config
-	 * @return WikiaSearchArticleMatch|null
+	 * @return Wikia\Search\Match\Article|null
 	 */
 	public function getArticleMatch( WikiaSearchConfig $config ) {
-	    wfProfileIn(__METHOD__);
-	
 	    if ( $config->hasArticleMatch() ) {
 			wfProfileOut(__METHOD__);
 	        return $config->getArticleMatch();
 	    }
-	    
-	    $term 			= $config->getOriginalQuery();
-	    $searchEngine	= F::build( 'SearchEngine' );
-    	$title			= $searchEngine->getNearMatch( $term );
-    	
-	    if( ( $title !== null ) && ( in_array( $title->getNamespace(), $config->getNamespaces() ) ) ) {
-	        $article		= F::build( 'Article',					array( $title, RequestContext::getMain() ), 'newFromTitle' );
-	        $articleMatch	= F::build( 'WikiaSearchArticleMatch',	array( $article ) );
-	
-	        $config->setArticleMatch( $articleMatch );
-	        
-	        wfProfileOut(__METHOD__);
-	        return $articleMatch;
+	    $match = $this->interface->getArticleMatchForTermAndNamespaces( $config->getOriginalQuery(), $config->getNamespaces() );
+	    if (! empty( $match )  ) {
+	    	$config->setArticleMatch( $match );
+	    	return $match;
 	    }
-	    wfProfileOut(__METHOD__);
 	    return null;
 	}
 	
 	public function getWikiMatch( WikiaSearchConfig $config ) {
-		wfProfileIn(__METHOD__);
-		
 		if ( $config->hasWikiMatch() ) {
-			wfProfileOut(__METHOD__);
 			return $config->getWikiMatch();
 		}
-		
 		$domain = preg_replace(
 				'/[^a-zA-Z]/',
 				'',
 				strtolower( $config->getQuery( WikiaSearchConfig::QUERY_RAW ) ) 
 				);
-		$dbr = $this->wf->GetDB( DB_SLAVE, array(), $this->wg->ExternalSharedDB );
-		$query = $dbr->select(
-				array( 'city_domains' ),
-				array( 'city_id' ),
-				array( 'city_domain' => "{$domain}.wikia.com" )
-				);
-		if ( $row = $dbr->fetchObject( $query ) ) {
-			$config->setWikiMatch( new WikiaSearchWikiMatch( $row->city_id ) );
-			wfProfileOut(__METHOD__);
-			return $config->getWikiMatch();
+		$match = $this->interface->getWikiMatchByHost( $domain );
+		if (! empty( $match ) ) {
+			$config->setWikiMatch( $match );
+			return $match;
 		}
-		
-		
-		wfProfileOut(__METHOD__);
 		return null;
 	}
 	
@@ -578,10 +553,8 @@ class WikiaSearch extends WikiaObject {
 		
 		$searchConfig->setFilterQuery( $this->getFilterQueryString( $searchConfig ) );
 		
-		if ( $searchConfig->hasArticleMatch() ) {
-			$am       = $searchConfig->getArticleMatch();
-			$article  = $am->getArticle();  
-			$noPtt    = self::valueForField( 'id', sprintf( '%s_%s', $searchConfig->getCityId(), $article->getID() ), array( 'negate' => true ) ) ;
+		if ( $searchConfig->hasArticleMatch() ) {  
+			$noPtt    = self::valueForField( 'id', $searchConfig->getArticleMatch()->getResult()->getVar( 'id' ), array( 'negate' => true ) ) ;
 			$searchConfig->setFilterQuery( $noPtt, 'ptt' );
 		} else if ( $searchConfig->hasWikiMatch() ) {
 			$noPtt    = self::valueForField( 'wid', $searchConfig->getWikiMatch()->getId(), array( 'negate' => true ) );

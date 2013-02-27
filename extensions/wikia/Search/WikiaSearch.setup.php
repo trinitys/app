@@ -38,6 +38,7 @@ $app->registerClass('WikiaSearchArticleMatch',		$dir . 'WikiaSearchArticleMatch.
 $app->registerClass('WikiaSearchWikiMatch',    		$dir . 'WikiaSearchWikiMatch.class.php');
 $app->registerClass('WikiaSearchAjaxController',	$dir . 'WikiaSearchAjaxController.class.php');
 $app->registerClass('WikiaVideoSearchController',	$dir . 'WikiaVideoSearchController.class.php');
+$app->registerClass('WikiaSearchResultSetSingleton', $dir . 'WikiaSearchResultSetSingleton.class.php');
 
 // autoloads values in the search namespace
 spl_autoload_register( function( $class ) {

@@ -363,20 +363,20 @@ class WikiaSearchConfig implements \ArrayAccess
 	/**
 	 * Overloading __set to type hint
 	 * @see    WikiaSearchConfigTest::testArticleMatching
-	 * @param  WikiaSearchArticleMatch $articleMatch
+	 * @param  Wikia\Search\Match\Article $articleMatch
 	 * @return WikiaSearchConfig provides fluent interface
 	 */
-	public function setArticleMatch( WikiaSearchArticleMatch $articleMatch ) {
+	public function setArticleMatch( Wikia\Search\Match\Article $articleMatch ) {
 		$this->params['articleMatch'] = $articleMatch;
 		return $this;
 	}
 	
 	/**
 	 * Overloading __set to type hint
-	 * @param  WikiaSearchWikiMatch $wikiMatch
+	 * @param  Wikia\Search\Match\Wiki $wikiMatch
 	 * @return WikiaSearchConfig provides fluent interface
 	 */
-	public function setWikiMatch( WikiaSearchWikiMatch $wikiMatch ) {
+	public function setWikiMatch( Wikia\Search\Match\Wiki $wikiMatch ) {
 		$this->params['wikiMatch'] = $wikiMatch;
 		return $this;
 	}
@@ -384,7 +384,7 @@ class WikiaSearchConfig implements \ArrayAccess
 	/**
 	 * For IDE type-hinting
 	 * @see    WikiaSearchConfigTest::testArticleMatching
-	 * @return WikiaSearchArticleMatch
+	 * @return Wikia\Search\Match\Article
 	 */
 	public function getArticleMatch() {
 		return isset( $this['articleMatch'] ) ? $this['articleMatch'] : null;
@@ -392,7 +392,7 @@ class WikiaSearchConfig implements \ArrayAccess
 	
 	/**
 	 * Agnostic match accessor
-	 * @return WikiaSearchArticleMatch|WikiaSearchWikiMatch|false
+	 * @return Wikia\Search\Match\Article|Wikia\Search\Match\Wiki|false
 	 */
 	public function getMatch() {
 		return $this->getArticleMatch() || $this->getWikiMatch();

@@ -135,10 +135,22 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 				$exampleDoc		= $documents[0];
 				$cityId			= $exampleDoc->getCityId();
 	
+				$helper = new WikiaHomePageHelper();
+				$vizData = $helper->getWikiInfoForVisualization( $cityId, $this->wg->LanguageCode );
+				$stats = $helper->getWikiStats( $cityId );
+				
 				$this->setHeader( 'cityId',				$cityId );
 				$this->setHeader( 'cityTitle',			WikiFactory::getVarValueByName( 'wgSitename', $cityId ) );
 				$this->setHeader( 'cityUrl',			WikiFactory::getVarValueByName( 'wgServer', $cityId ) );
-				$this->setHeader( 'cityArticlesNum',	$exampleDoc['wikiarticles'] );
+				$this->setHeader( 'cityArticlesNum',	$stats['articles'] );
+				$this->setHeader( 'cityImagesNum',      $stats['images'] );
+				$this->setHeader( 'cityVideosNum',      $stats['videos'] );
+				$this->setHeader( 'hub',                $exampleDoc['hub'] );
+				$this->setHeader( 'image',              array_shift( $vizData['images'] ) );
+				$this->setHeader( 'promoted',           $vizData['promoted'] );
+				$this->setHeader( 'official',           $vizData['official'] );
+				$this->setHeader( 'new',                $vizData['new'] );
+				$this->setHeader( 'hot',                $vizData['hot'] );
 			}
 		}
 
@@ -236,49 +248,7 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 			return $this;
 		}
 
-		$articleMatch	= $this->searchConfig->getArticleMatch();
-		$article		= $articleMatch->getCanonicalArticle();
-		$title			= $article->getTitle();
-		$articleId		= $article->getID();
-		$titleNs		= $title->getNamespace();
-
-		if (! in_array( $titleNs, $this->searchConfig->getNamespaces() ) ) {
-			// we had an article match by name, but not in our desired namespaces
-			wfProfileOut(__METHOD__);
-			return $this;
-		}
-
-		$articleMatchId	= sprintf( '%s_%s', $this->wg->CityId, $articleId );
-		$articleService	= F::build('ArticleService', array( $articleId ) );
-		$firstRev		= $title->getFirstRevision();
-		$created		= $firstRev ? $this->wf->Timestamp(TS_ISO_8601, $firstRev->getTimestamp()) : '';
-		$lastRev		= Revision::newFromId($title->getLatestRevID());
-		$touched		= $lastRev ? $this->wf->Timestamp(TS_ISO_8601, $lastRev->getTimestamp()) : '';
-		
-		$fieldsArray = array(
-				'wid'			=>	$this->wg->CityId,
-				'title'			=>	(string) $title,
-				'url'			=>	urldecode( $title->getFullUrl() ),
-				'score'			=>	'PTT',
-				'isArticleMatch'=>	true,
-				'ns'			=>	$titleNs,
-				'pageId'		=>	$articleId,
-				'created'		=>	$created,
-				'touched'		=>	$touched,
-				);
-		//@TODO: we could put categories ^^ here but we aren't really using them yet
-
-		$result		= F::build( 'WikiaSearchResult', array($fieldsArray) );
-		$snippet	= $articleService->getTextSnippet(250);
-
-		$result->setText( $snippet );
-		if ( $articleMatch->hasRedirect() ) {
-			$result->setVar( 'redirectTitle', $articleMatch->getArticle()->getTitle() );
-		}
-
-		$result->setVar( 'id', $articleMatchId );
-
-		$this->addResult( $result );
+		$this->addResult( $this->searchConfig->getArticleMatch()->getResult() );
 
 		$this->resultsFound++;
 
@@ -293,7 +263,8 @@ class WikiaSearchResultSet extends WikiaObject implements Iterator,ArrayAccess {
 	protected function prependWikiMatchIfExists() {
 		if ( $this->searchConfig->hasWikiMatch() ) {
     		$this->resultsFound++;
-    		return $this->addResult( $this->searchConfig->getWikiMatch()->getResult() );
+    		$result = $this->searchConfig->getWikiMatch()->getResult();
+    		$this->results[$result['url']] = new WikiaSearchResultSetSingleton( $result ); 
 		}
 		return $this;
 	}

@@ -116,7 +116,9 @@ class WikiaSearchConfigTest extends WikiaSearchBaseTest {
 
 		$mockTitle			= $this->getMock( 'Title' );
 		$mockArticle		= $this->getMock( 'Article', array(), array( $mockTitle ) );
-		$mockArticleMatch	= $this->getMock( 'WikiaSearchArticleMatch', array(), array( $mockArticle ) );
+		$mockArticleMatch	= $this->getMockBuilder( 'Wikia\Search\Match\Article' )
+		                           ->disableOriginalConstructor()
+		                           ->getMock();
 
 		$limit = $config->getLimit();
 
@@ -422,7 +424,9 @@ class WikiaSearchConfigTest extends WikiaSearchBaseTest {
 	public function testArticleMatching() {
 		$mockTitle			= $this->getMock( 'Title' );
 		$mockArticle		= $this->getMock( 'Article', array(), array( $mockTitle ) );
-		$mockArticleMatch	= $this->getMock( 'WikiaSearchArticleMatch', array(), array( $mockArticle ) );
+		$mockArticleMatch	= $this->getMockBuilder( 'Wikia\Search\Match\Article' )
+		                           ->disableOriginalConstructor()
+		                           ->getMock();
 		$config				= F::build( 'WikiaSearchConfig' );
 
 		$this->assertFalse(

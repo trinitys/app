@@ -62,6 +62,18 @@ class MediaWikiInterface
 	 * @var array
 	 */
 	protected $pageIdsToFiles = array();
+	
+	/**
+	 * Stores articles that are redirects (helps us grab non-canonical info)
+	 * @var array
+	 */
+	protected $redirectArticles = array();
+	
+	/**
+	 * An array that corresponds wiki IDs to their wiki data sources.
+	 * @var array
+	 */
+	protected $wikiDataSources = array();
 
 	/**
 	 * Given a page ID, get the title string
@@ -239,6 +251,28 @@ class MediaWikiInterface
 	}
 	
 	/**
+	 * Gets global values set for other wikis.
+	 * @param string $global
+	 * @param int $wikiId
+	 * @return mixed
+	 */
+	public function getGlobalForWiki( $global, $wikiId ) {
+		$row = \WikiFactory::getVarValueByName( $global, $wikiId );
+		if ( is_object( $row ) ) {
+			return unserialize( $row->cv_value );
+		}
+		return $row;
+	}
+	
+	/**
+	 * Determines whether we are using a mobile skin.
+	 * @return bool
+	 */
+	public function isSkinMobile() {
+		return $this->app->wg->User->getSkin() instanceof \SkinWikiaMobile;
+	}
+	
+	/**
 	 * Provides global value as set in the Oasis wg helper.
 	 * If the value is NULL, we return the default value set in param 2
 	 * @param mixed $global
@@ -266,8 +300,16 @@ class MediaWikiInterface
 	 * @return int
 	 */
 	public function getWikiId() {
+		return (int) $this->isOnDbCluster() ?  $this->getGlobal( 'CityId' ) : $this->getGlobal( 'SearchWikiId' );
+	}
+	
+	/**
+	 * Tells us whether we're using the DB cluster. This is how we figure out if we're on internal or not.
+	 * @return boolean
+	 */
+	public function isOnDbCluster() {
 		$shared = $this->getGlobal( 'ExternalSharedDB' );
-		return (int) ( empty( $shared ) ? $this->getGlobal( 'SearchWikiId' ) : $this->getGlobal( 'CityId' ) );
+		return !empty( $shared );
 	}
 	
 	/**
@@ -370,6 +412,29 @@ class MediaWikiInterface
 	}
 	
 	/**
+	 * Returns default namespaces from mediawiki.
+	 * @return array
+	 */
+	public function getDefaultNamespacesFromSearchEngine() {
+		return \SearchEngine::defaultNamespaces();
+	}
+	
+	/**
+	 * Returns searchable namespaces from MediaWiki.
+	 * @return array
+	 */
+	public function getSearchableNamespacesFromSearchEngine() {
+		return \SearchEngine::searchableNamespaces();
+	}
+	
+	/**
+	 * Returns text values for namespaces.
+	 */
+	public function getTextForNamespaces( array $namespaces ) {
+		return \SearchEngine::namespacesAsText( $namespaces );
+	}
+	
+	/**
 	 * Allows us to abstract calling a hook away from other parts of the library.
 	 * @param string $hookName
 	 * @param array $args
@@ -395,6 +460,192 @@ class MediaWikiInterface
 	 */
 	public function pageIdIsVideoFile( $pageId ) {
 		return \WikiaFileHelper::isVideoFile( $this->getFileForPageId( $pageId ) );
+	}
+	
+	/**
+	 * Returns the appropriately formatted timestamp for the first revision of a given page.
+	 * @param int $pageId
+	 * @return string
+	 */
+	public function getFirstRevisionTimestampForPageId( $pageId ) {
+		$firstRev = $this->getTitleFromPageId( $pageId )->getFirstRevision();
+		return empty( $firstRev ) ? '' : $this->getFormattedTimestamp( $firstRev->getTimestamp() );
+	}
+	
+	/**
+	 * Returns a text snippet provided a page ID.
+	 * @param int $pageId
+	 * @param int $snippetLength
+	 * @return string
+	 */
+	public function getSnippetForPageId( $pageId, $snippetLength = 250 ) {
+		$articleService = new \ArticleService( $this->getCanonicalPageIdFromPageId( $pageId ) );
+		return $articleService->getTextSnippet( $snippetLength );
+	}
+	
+	/**
+	 * Returns the non-canonical title string for page ID (redirects ignored)
+	 * @param int $pageId
+	 * @return string
+	 */
+	public function getNonCanonicalTitleString( $pageId ) {
+		if ( isset( $this->redirectArticles[$pageId] ) ) {
+			return $this->getTitleString( $this->redirectArticles[$pageId]->getTitle() );
+		}
+		return $this->getTitleStringFromPageId( $pageId ); 
+	}
+	
+	/**
+	 * Returns the non-canonical url string for page ID (redirects ignored)
+	 * @param int $pageId
+	 * @return string
+	 */
+	public function getNonCanonicalUrlFromPageId( $pageId ) {
+		if ( isset( $this->redirectArticles[$pageId] ) ) {
+			return $this->redirectArticles[$pageId]->getTitle()->getFullUrl();
+		}
+		return $this->getUrlFromPageId( $pageId ); 
+	}
+	
+	/**
+	 * Provided a string, uses MediaWiki's ability to find article matches to instantiate a Wikia Search Article Match.
+	 * @param string $term
+	 * @param array $namespaces
+	 * @return \Wikia\Search\Match\Article|NULL
+	 */
+	public function getArticleMatchForTermAndNamespaces( $term, array $namespaces ) {
+		$searchEngine = new \SearchEngine();
+		$title = $searchEngine->getNearMatch( $term );
+		if( ( $title !== null ) && ( in_array( $title->getNamespace(), $namespaces ) ) ) {
+			// initialize our memoized data
+			$this->getPageFromPageId( $title->getArticleId() );
+			$articleMatch = new \Wikia\Search\Match\Article( $title->getArticleId(), $this );
+			return $articleMatch;
+		}
+		return null;
+	}
+	
+	/**
+	 * Provided a prepped domain string, (e.g. 'runescape'), return a wiki match.
+	 * @param string $domain
+	 * @return \Wikia\Search\Match\Wiki|NULL
+	 */
+	public function getWikiMatchByHost( $domain ) {
+		$dbr = $this->app->wf->GetDB( DB_SLAVE, array(), $this->app->wg->ExternalSharedDB );
+		$query = $dbr->select(
+				array( 'city_domains' ),
+				array( 'city_id' ),
+				array( 'city_domain' => "{$domain}.wikia.com" )
+				);
+		if ( $row = $dbr->fetchObject( $query ) ) {
+			return new \Wikia\Search\Match\Wiki( $row->city_id, $this );
+		}
+		return null;
+	}
+	
+
+	/**
+	 * Returns the URL string for a wiki ID
+	 * @param int $wikiId
+	 * @return string
+	 */
+	public function getMainPageUrlForWikiId( $wikiId ) {
+		return $this->getMainPageTitleForWikiId( $wikiId )->getFullUrl();
+	}
+	
+	/**
+	 * Returns text from the main page of a provided wiki.
+	 * @param int $wikiId
+	 * @return string
+	 */
+	public function getMainPageTextForWikiId( $wikiId ) {
+		$params = array(
+				'controller' => 'ArticlesApiController', 
+				'method' => 'getDetails', 
+				'titles' => $this->getMainPageTitle()->getDbKey()
+				);
+		$response = \ApiService::foreignCall( $this->getDbNameForWikiId( $wikiId ), $params, \ApiService::WIKIA );
+		$item = \array_shift( $response['items'] );
+		return $item['abstract'];
+	}
+	
+	/**
+	 * Returns the appropriately formatted timestamp for the most recent revision of a given page.
+	 * @param int $pageId
+	 * @return string
+	 */
+	public function getLastRevisionTimestampForPageId( $pageId ) {
+		$lastRev = \Revision::newFromId( $this->getTitleFromPageId( $pageId )->getLatestRevID() );
+		return empty( $lastRev ) ? '' : $this->getFormattedTimestamp( $lastRev->getTimestamp() ); 
+	}
+	
+	/**
+	 * Returns mediawiki-formatted timestamps.
+	 * @param string $timestamp
+	 * @return string
+	 */
+	public function getMediaWikiFormattedTimestamp( $timestamp ) { 
+		return $this->app->wg->Lang ? $this->app->wg->Lang->date( $this->app->wf->Timestamp( TS_MW, $timestamp ) ) : '';
+	}
+	
+	
+	
+	/**
+	 * Determines if the current globally registered language code is supported by search for dynamic support.
+	 * @return boolean
+	 */
+	public function searchSupportsCurrentLanguage() {
+		return $this->searchSupportsLanguageCode( $this->getLanguageCode() );
+	}
+	
+	/**
+	 * Determines if a given language code is supported for dynamic search
+	 * @param string $languageCode
+	 * @return boolean
+	 */
+	public function searchSupportsLanguageCode( $languageCode ) {
+		return in_array( $languageCode, $this->getGlobal( 'WikiaSearchSupportedLanguages' ) );
+	}
+	
+	/**
+	 * Returns the HTML needed to get a thumbnail provided a page ID
+	 * @param int $pageId
+	 * @param array $transformParams
+	 * @param array $htmlParams
+	 */
+	public function getThumbnailHtmlForPageId(
+			$pageId, 
+			$transformParams = array( 'width' => 160 ), 
+			$htmlParams = array('desc-link'=>true, 'img-class'=>'thumbimage', 'duration'=>true) 
+			) {
+		$img = $this->getFileForPageId( $pageId );
+		if (! empty( $img ) ) {
+			$thumb = $img->transform( array( 'width' => 160 ) ); // WikiaGrid 1 column width
+			return $thumb->toHtml( $htmlParams );
+		}
+	}
+	
+	/**
+	 * Returns the number of video views for a page ID.
+	 * @param int $pageId
+	 * @return string
+	 */
+	public function getVideoViewsForPageId( $pageId ) {
+		$videoViews = '';
+		$title = $this->getTitleFromPageId( $pageId );
+		if ( \F::build( 'WikiaFileHelper' )->isFileTypeVideo( $title ) ) {
+			$videoViews = \F::build( 'MediaQueryService' )->getTotalVideoViewsByTitle( $title->getDBKey() );
+			$videoViews = \F::app()->wf->MsgExt( 'videohandler-video-views', array( 'parsemag' ), \F::app()->wg->Lang->formatNum($videoViews) );
+		}
+		return $videoViews;
+	}
+	
+	/**
+	 * Provides a format, provided a revision's default timestamp format.
+	 * @param string $timestamp
+	 */
+	protected function getFormattedTimestamp( $timestamp ) {
+		return $this->app->wf->Timestamp( TS_ISO_8601, $timestamp );
 	}
 
 	/**
@@ -435,6 +686,7 @@ class MediaWikiInterface
 			throw new \WikiaException( 'Invalid Article ID' );
 		}
 		if( $page->isRedirect() ) {
+			$this->redirectArticles[$pageId] = $page;
 			$page = new \Article( $page->getRedirectTarget() );
 			$newId = $page->getID();
 			$this->pageIdsToArticles[$newId] = $page;
@@ -467,5 +719,39 @@ class MediaWikiInterface
 		}
 		wfProfileOut(__METHOD__);
 		return (string) $title;
+	}
+	
+	/**
+	 * Allows us to access an instance of WikiDataSource
+	 * @param int $wikiId
+	 * @return \WikiDataSource
+	 */
+	protected function getDataSourceForWikiId( $wikiId ) {
+		if ( empty( $this->wikiDataSources[$wikiId] ) ) {
+			$this->wikiDataSources[$wikiId] = new \WikiDataSource( $wikiId );
+		}
+		return $this->wikiDataSources[$wikiId];
+	}
+
+	protected function getDbNameForWikiId( $wikiId ) {
+		return $this->getDataSourceForWikiId( $wikiId )->getDbName();
+	}
+	
+	/**
+	 * Returns an instance of GlobalTitle provided a Wiki ID
+	 * @param int $wikiId
+	 * @return GlobalTitle
+	 */
+	protected function getMainPageTitleForWikiId( $wikiId ) {
+		$response = \ApiService::foreignCall(
+			$this->getDbNameForWikiId( $wikiId ), 
+			array(
+					'action'      => 'query',
+					'meta'        => 'allmessages',
+					'ammessages'  => 'mainpage',
+					'amlang'      => $this->getGlobalForWiki( 'LanguageCode', $wikiId )
+					) 
+			);
+	    return \GlobalTitle::newFromText( $response['query']['allmessages'][0]['*'], NS_MAIN, $wikiId );
 	}
 }
