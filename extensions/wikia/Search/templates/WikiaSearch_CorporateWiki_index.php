@@ -57,14 +57,16 @@
 						<?php foreach( $results as $result ): ?>
 							<?php
 								$pos++;
-								echo $app->getView( 'WikiaSearch', 'CorporateWiki_result', array(
-									'result' => $result,
-									'gpos' => 0,
-									'pos' => $pos + (($currentPage - 1) * $resultsPerPage),
-									'debug' => $debug,
-									'query' => $query,
-									'relevancyFunctionId' => $relevancyFunctionId
-								));
+								if($result instanceof WikiaSearchResult) {
+									echo $app->getView( 'WikiaSearch', 'CorporateWiki_result', array(
+										'result' => $result,
+										'gpos' => 0,
+										'pos' => $pos + (($currentPage - 1) * $resultsPerPage),
+										'debug' => $debug,
+										'query' => $query,
+										'relevancyFunctionId' => $relevancyFunctionId
+									));
+								}
 							?>
 						<?php endforeach; ?>
 					</ul>
