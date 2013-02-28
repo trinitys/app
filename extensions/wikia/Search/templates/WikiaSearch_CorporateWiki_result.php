@@ -1,11 +1,11 @@
 <li class="result">
 	<article>
-		<img src="" alt=""
-		     class="wikiPromoteThumbnail" />
-		<div>
+		<img src="#" alt=""
+		     class="wikiPromoteThumbnail grid-1 alpha" />
+		<div class="result-description grid-5">
 			<h1>
-				<?php /*$title = ( empty($inGroup) && empty( $result['isWikiMatch'] ) ) ? str_replace('$1',
-$result->getTitle(), $result->getVar('wikititle')) : $result->getTitle();*/ ?>
+				<?php $title = ( empty($inGroup) && empty( $result['isWikiMatch'] ) ) ? str_replace('$1',
+$result->getTitle(), $result->getVar('wikititle')) : $result->getTitle(); ?>
 
 				<?php $trackingData = 'class="result-link" data-wid="'.$result->getCityId().'" data-pageid="'
 				.$result->getVar('pageId').'" data-pagens="'.$result->getVar('ns').'" data-title="'.$result->getTitle
@@ -13,7 +13,7 @@ $result->getTitle(), $result->getVar('wikititle')) : $result->getTitle();*/ ?>
 				?>
 
 				<?= $debug ? $pos.'. ' : ''; ?><a href="<?= $result->getUrl(); ?>" <?=$trackingData;?> >Lorem ipsum
-				Dolor<?//= $title ?></a>
+<?= $title ?></a>
 			</h1>
 
 			<!-- TODO: Do we need this in cross wiki search -->
@@ -22,13 +22,13 @@ $result->getTitle(), $result->getVar('wikititle')) : $result->getTitle();*/ ?>
 			<? endif; ?>
 			<!-- end -->
 
-			<p class="hub">GAMES</p>
+			<p class="hub subtle">GAMES</p>
 			<p><?= $result->getText(); ?></p>
 			<ul>
 				<li><a href="<?= $result->getUrl(); ?>" <?=$trackingData;?> ><?=Language::factory($wg->ContentLanguage)->truncate($result->getTextUrl(), 90);?></a></li>
 				<li><a href="http://<?= $result['host'] .'/wiki/Special:Search?search='.urlencode($query).'&fulltext=Search'; ?>"><?= wfMsg( 'wikiasearch2-search-on-wiki') ?></a></li>
 			</ul>
-			<ul class="wiki-statistics">
+			<ul class="wiki-statistics subtle">
 				<li><?= $result->getArticlesNum(); ?> Pages</li>
 				<li><?= $result->getImagesNum(); ?> Photos</li>
 				<li><?= $result->getVideosNum(); ?> Videos</li>
