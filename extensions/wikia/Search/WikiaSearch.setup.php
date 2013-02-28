@@ -9,8 +9,8 @@
 $app = F::app();
 $dir = dirname(__FILE__) . '/';
 
-require_once( $IP . '/lib/Solarium/Autoloader.php' );
-require_once( $IP . '/lib/simplehtmldom/simple_html_dom.php' );
+require_once( $IP . '/vendor/Solarium/Autoloader.php' );
+require_once( $IP . '/vendor/simplehtmldom/simple_html_dom.php' );
 Solarium_Autoloader::register();
 
 /**

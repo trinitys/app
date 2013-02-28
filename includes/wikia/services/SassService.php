@@ -1,4 +1,4 @@
-<?php
+ <?php
 
 class SassService extends Service {
 
@@ -169,7 +169,7 @@ class SassService extends Service {
 
 	protected function compileInternal( $parameters ) {
 		global $wgAutoloadClasses, $IP;
-		$wgAutoloadClasses['SassParser'] = $IP.'/lib/phpsass/SassParser.php';
+		$wgAutoloadClasses['SassParser'] = $IP.'/vendor/phpsass/SassParser.php';
 
 		// make sure SassParser-related classes are loaded
 		require_once $wgAutoloadClasses['SassParser'];
