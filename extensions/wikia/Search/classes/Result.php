@@ -1,16 +1,31 @@
 <?php
-
+/**
+ * Class definition for Wikia\Search\Result
+ */
+namespace Wikia\Search;
+use \Solarium_Document_ReadWrite as ReadWrite; #forward compatibility with v3
 /**
  * This is a wrapper for the Solarium_Document_ReadWrite class based on code we 
  * originally wrote for an entirely hand-rolled search result class.
  * @author Robert Elwell
- *
  */
-class WikiaSearchResult extends Solarium_Document_ReadWrite {
-	protected $titleObject;
-	protected $thumbnailObject;
+class Result extends ReadWrite {
 	
+	/**
+	 * @var MediaWikiInterface
+	 */
+	protected $interface;
 
+	/**
+	 * Constructs the result and stores MW interface
+	 * @param array $fields
+	 * @param array $boosts
+	 */
+	public function __construct( $fields = array(), $boosts = array() ) {
+		parent::__construct( $fields, $boosts );
+		$this->interface = MediaWikiInterface::getInstance();
+	}
+	
 	/**
 	 * Backwards compatibility, since Solarium_Document_ReadWrite instances have array access.
 	 * @see    WikiaSearchResult::testGetCityId
@@ -47,8 +62,8 @@ class WikiaSearchResult extends Solarium_Document_ReadWrite {
 	 * @return string
 	 */
 	public function getTitle() {
-		if ( isset( $this->_fields[WikiaSearch::field('title')] )  ) {
-			return $this->_fields[WikiaSearch::field('title')];
+		if ( isset( $this->_fields[Utilities::field('title')] )  ) {
+			return $this->_fields[Utilities::field('title')];
 		}
 		
 		if ( isset( $this->_fields['title'] ) ) {
@@ -56,8 +71,8 @@ class WikiaSearchResult extends Solarium_Document_ReadWrite {
 		}
 		
 		// for video wiki
-		if ( isset( $this->_fields[WikiaSearch::field('title', 'en')] )  ) {
-			return $this->_fields[WikiaSearch::field('title', 'en')];
+		if ( isset( $this->_fields[Utilities::field('title', 'en')] )  ) {
+			return $this->_fields[Utilities::field('title', 'en')];
 		}
 		
 		return '';
@@ -70,7 +85,7 @@ class WikiaSearchResult extends Solarium_Document_ReadWrite {
 	 * @return WikiaSearchResult provides fluent interface
 	 */
 	public function setTitle($value) {
-		$this->_fields[WikiaSearch::field('title')] = $this->fixSnippeting($value);
+		$this->_fields[Utilities::field('title')] = $this->fixSnippeting($value);
 		return $this;
 	}
 
@@ -156,47 +171,18 @@ class WikiaSearchResult extends Solarium_Document_ReadWrite {
 	}
 
 	/**
-	 * Retrieves the title object for this
-	 * @see    WikiaSearchResultTest::testGetTitleObject
-	 * @return Title|null
+	 * Returns the thumbnail html
+	 * @return string
 	 */
-	public function getTitleObject() {
-		$title = $this->getTitle();
-		
-		if ( $title === null || $title === '' ) {
-			// this will likely be null
-			return $this->titleObject;
-		}
-		
-		$ns = $this['ns'] ?: 0;
-		
-		if (! isset( $this->titleObject ) ) {
-			$this->titleObject = F::build( 'Title', 
-											array(	$ns, 
-													preg_replace( '/^' . MWNamespace::getCanonicalName( $ns ) . ':/', '', $title )
-												 ),
-											'MakeTitle'
-									 	 );
-		}
-		return $this->titleObject;
-	}
-
-	/**
-	 * Returns the thumbnail object that is used to render thumbnails in a search result
-	 * @see    WikiaSearchTest::testGetThumbnail
-	 * @return MediaTransformOutput|null (i think?)
-	 */
-	public function getThumbnail() {
-		if ( (! isset( $this->thumbnailObject ) ) && ( $this['ns'] == NS_FILE ) ) {
-			$img = F::app()->wf->FindFile( $this->getTitleObject() );
-			if (! empty( $img ) ) {
-				$thumb = $img->transform( array( 'width' => 160 ) ); // WikiaGrid 1 column width
-				if (! empty( $thumb ) ) {
-					$this->thumbnailObject = $thumb;
-				}
+	public function getThumbnailHtml() {
+		if (! isset( $this['thumbnail'] ) ) {
+			try {
+				$this['thumbnail'] = $this->interface->getThumbnailHtmlForPageId( $this['pageid'] );
+			} catch ( \Exception $e ) {
+				$this['thumbnail'] = '';
 			}
 		}
-		return $this->thumbnailObject;
+		return $this['thumbnail'];
 	}
 
 	/**
@@ -204,15 +190,11 @@ class WikiaSearchResult extends Solarium_Document_ReadWrite {
 	 * @return string $videoViews
 	 */
 	public function getVideoViews() {
-		$videoViews = '';
-		$title = $this->getTitleObject();
-		
-		if ( F::build( 'WikiaFileHelper' )->isFileTypeVideo( $title ) ) {
-			$videoViews = F::build( 'MediaQueryService' )->getTotalVideoViewsByTitle( $title->getDBKey() );
-			$videoViews = F::app()->wf->MsgExt( 'videohandler-video-views', array( 'parsemag' ), F::app()->wg->Lang->formatNum($videoViews) );
+		try {
+			return $this->interface->getVideoViewsForPageId( $this['pageid'] );
+		} catch ( \Exception $e ) {
+			return 0;
 		}
-
-		return $videoViews;
 	}
 
 	/**

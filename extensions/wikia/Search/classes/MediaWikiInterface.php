@@ -641,6 +641,14 @@ class MediaWikiInterface
 	}
 	
 	/**
+	 * Returns a number formatted according to the current language.
+	 * @param string $number
+	 */
+	public function formatNumber( $number ) {
+		return $this->app->wg->Lang->formatNum( $number ); 
+	}
+	
+	/**
 	 * Provides a format, provided a revision's default timestamp format.
 	 * @param string $timestamp
 	 */
@@ -664,7 +672,7 @@ class MediaWikiInterface
 	 */
 	protected function getFileForPageId( $pageId ) {
 		if (! isset( $this->pageIdsToFiles[$pageId] ) ) {
-			$this->pageIdsToFiles[$pageId] = $this->app->wf->findFile( $this->getTitleStringFromPageId( $pageId ) );
+			$this->pageIdsToFiles[$pageId] = $this->app->wf->FindFile( $this->getTitleFromPageId( $pageId ) );
 		}
 		return $this->pageIdsToFiles[$pageId];
 	}

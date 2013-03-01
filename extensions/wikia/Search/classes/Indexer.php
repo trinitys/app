@@ -1,15 +1,15 @@
-<?php 
+<?php
 /**
- * Class definition for WikiaSearchIndexer
+ * Class definition for Wikia\Search\Indexer
  */
-use \Wikia\Search\IndexService\Factory;
-use \Wikia\Search\MediaWikiInterface;
+namespace Wikia\Search;
+use \Solarium_Client, \WikiaException, Wikia\Search\IndexService, \WikiDataSource, \Wikia, \ScribeProducer;
 /**
- * This class is responsible for handling all the methods needed to serve up document data for indexing.
- * @author Robert Elwell
+ * This lets us 
+ * @author relwell
  */
-class WikiaSearchIndexer extends WikiaObject {
-	
+class Indexer
+{
 	/**
 	 * Used for querying Solr
 	 * @var Solarium_Client
@@ -46,10 +46,19 @@ class WikiaSearchIndexer extends WikiaObject {
 	 * Handles dependency injection for solarium client
 	 * @param Solarium_Client $client
 	 */
-	public function __construct( Solarium_Client $client ) {
-	    $this->client = $client;
-	    $this->interface = MediaWikiInterface::getInstance();
-	    parent::__construct();
+	public function __construct() {
+		$this->interface = MediaWikiInterface::getInstance();
+		$master = $this->interface->isOnDbCluster() ? $this->interface->getGlobal( 'SolrHost' ) : 'staff-search-s1';
+		$params = array(
+				'adapter' => 'Curl',
+				'adapteroptions' => array(
+						'host' => $master,
+						'port' => 8983,
+						'path' => '/solr/'
+						 )
+				);
+		$this->client = new Solarium_Client( $params );
+		$this->logger = new Wikia();
 	}
 		
 	/**
@@ -84,16 +93,12 @@ class WikiaSearchIndexer extends WikiaObject {
 	/**
 	 * This method does the brunt of the work for populating an array with the values
 	 * we need when servicing the backend search indexer processes
-	 * @see WikiaSearchIndexer::getPages()
-	 * @see WikiaSearchController::getPage()
 	 * @param int $pageId
 	 * @throws WikiaException
 	 * @return array result
 	 */
 	public function getPage( $pageId ) {
 		wfProfileIn(__METHOD__);
-		// these will eventually be broken out into their own atomic updates
-		$cityId = !empty( $this->wg->CityId ) ? $this->wg->CityId : $this->wg->SearchWikiId;
 		$result = array( 'id' => sprintf( '%s_%s', $this->interface->getWikiId(), $this->interface->getCanonicalPageIdFromPageId( $pageId ) ) );
 
 		foreach ( $this->serviceNames as $serviceName ) {
@@ -116,7 +121,7 @@ class WikiaSearchIndexer extends WikiaObject {
 	 */
 	public function getService( $serviceName ) {
 		if (! isset( $this->services[$serviceName] ) ) {
-			$this->services[$serviceName] = Factory::getInstance()->get( $serviceName ); 
+			$this->services[$serviceName] = IndexService\Factory::getInstance()->get( $serviceName ); 
 		}
 		return $this->services[$serviceName]; 
 	}
@@ -124,20 +129,12 @@ class WikiaSearchIndexer extends WikiaObject {
 	/**
 	 * Generates a Solr document from a page ID
 	 * @param  int $pageId
-	 * @return Solarium_Document_ReadWrite 
+	 * @return Wikia\Search\Result 
 	 */
 	public function getSolrDocument( $pageId ) {
-		$this->wg->AppStripsHtml = true;
-		
+		$this->interface->setGlobal( 'AppStripsHtml', true );
 		$pageData = $this->getPage( $pageId );
-		
-		foreach ( WikiaSearch::$languageFields as $field ) {
-			if ( isset( $pageData[$field] ) ) {
-				$pageData[WikiaSearch::field( $field, $pageData['lang'] )] = $pageData[$field];
-			}
-		}
-
-		return F::build( 'Solarium_Document_ReadWrite', array( $pageData ) );
+		return new Result( $pageData );
 	}
 	
 	/**
@@ -164,8 +161,8 @@ class WikiaSearchIndexer extends WikiaObject {
 		$updateHandler->addCommit();
 		try {
 			$this->client->update( $updateHandler );
-		} catch ( Exception $e ) {
-			F::build( 'Wikia' )->Log( __METHOD__, '', $e);
+		} catch ( \Exception $e ) {
+			$this->logger->log( __METHOD__, '', $e );
 		}
 		return true;
 	}
@@ -176,15 +173,15 @@ class WikiaSearchIndexer extends WikiaObject {
 	 */
 	public function reindexWiki( $wid ) {
 		try {
-			$dataSource = F::build( 'WikiDataSource', array( $wid ) );
+			$dataSource = new WikiDataSource( $wid );
 			$dbHandler = $dataSource->getDB();
 			$rows = $dbHandler->query( "SELECT page_id FROM page" );
 			while ( $page = $dbHandler->fetchObject( $rows ) ) {
-				$sp = F::build( 'ScribeProducer', array( 'reindex', $page->page_id ) );
+				$sp = new ScribeProducer( 'reindex', $page->page_id );
 				$sp->reindexPage();
 			}
-		} catch ( Exception $e ) {
-			F::build( 'Wikia' )->Log( __METHOD__, '', $e );
+		} catch ( \Exception $e ) {
+			$this->logger->log( __METHOD__, '', $e );
 		}
 	}
 	
@@ -196,12 +193,12 @@ class WikiaSearchIndexer extends WikiaObject {
 	 */
 	public function deleteWikiDocs( $wid ) {
 		$updateHandler = $this->client->createUpdate();
-		$query = WikiaSearch::valueForField( 'wid', $wid );
+		$query = Utilities::valueForField( 'wid', $wid );
 		$updateHandler->addDeleteQuery( $query );
 		$updateHandler->addCommit();
 		try {
 			return $this->client->update( $updateHandler );
-		} catch ( Exception $e ) {
+		} catch ( \Exception $e ) {
 			F::build( 'Wikia' )->Log( __METHOD__, 'Delete: '.$query, $e);
 		}
 	}
@@ -216,14 +213,14 @@ class WikiaSearchIndexer extends WikiaObject {
 	public function deleteManyWikiDocs( $wids ) {
 		$updateHandler = $this->client->createUpdate();
 		foreach ( $wids as $wid ) {
-			$query = WikiaSearch::valueForField( 'wid', $wid );
+			$query = Utilities::valueForField( 'wid', $wid );
 			$updateHandler->addDeleteQuery( $query );
 		}
 		$updateHandler->addCommit();
 		try {
 			return $this->client->update( $updateHandler );
-		} catch ( Exception $e ) {
-			F::build( 'Wikia' )->Log( __METHOD__, 'Delete: '.$query, $e);
+		} catch ( \Exception $e ) {
+			$this->logger->log( __METHOD__, 'Delete: '.$query, $e);
 		}
 	}
 	
@@ -235,13 +232,13 @@ class WikiaSearchIndexer extends WikiaObject {
 	public function deleteBatch( array $documentIds = array() ) {
 	    $updateHandler = $this->client->createUpdate();
 	    foreach ( $documentIds as $id ) {
-		    $updateHandler->addDeleteQuery( WikiaSearch::valueForField( 'id', $id ) );
+		    $updateHandler->addDeleteQuery( Utilities::valueForField( 'id', $id ) );
 	    }
 		$updateHandler->addCommit();
 	    try {
 	        $this->client->update( $updateHandler );
-	    } catch ( Exception $e ) {
-	        F::build( 'Wikia' )->Log( __METHOD__, implode( ',', $documentIds ), $e);
+	    } catch ( \Exception $e ) {
+	        $this->logger->log( __METHOD__, implode( ',', $documentIds ), $e);
 		}
 
 		return true;
@@ -252,11 +249,7 @@ class WikiaSearchIndexer extends WikiaObject {
 	 * @param int $pageId
 	 */
 	public function reindexPage( $pageId ) {
-		F::build( 'Wikia' )->log( __METHOD__, '', $pageId );
-		$document = $this->getSolrDocument( $pageId );
-		$this->reindexBatch( array( $document ) );
-		
-		return true;
+		return $this->reindexBatch( array( $this->getSolrDocument( $pageId ) ) );
 	}
 	
 	/**
@@ -265,89 +258,9 @@ class WikiaSearchIndexer extends WikiaObject {
 	 */
 	public function deleteArticle( $pageId) {
 		
-		$cityId	= $this->wg->CityId ?: $this->wg->SearchWikiId;
-		$id		= sprintf( '%s_%s', $cityId, $pageId );
+		$id		= sprintf( '%s_%s', $this->interface->getWikiId(), $pageId );
 		
 		$this->deleteBatch( array( $id ) );
-		
-		return true;
-	}
-
-	/**
-	 * MediaWiki Hooks
-	 */
-	
-	/**
-	 * Sends delete request to article if it gets deleted
-	 * @param WikiPage $article
-	 * @param User $user
-	 * @param integer $reason
-	 * @param integer $id
-	 */
-	public function onArticleDeleteComplete( &$article, User &$user, $reason, $id ) {
-		try {
-			return $this->deleteArticle( $id );
-		} catch ( Exception $e ) {
-		    F::build( 'Wikia' )->log( __METHOD__, '', $e );
-		    return true;
-		}
-	}
-	
-	/**
-	 * Reindexes the page
-	 * @param WikiPage $article
-	 * @param User $user
-	 * @param string $text
-	 * @param string $summary
-	 * @param bool $minoredit
-	 * @param bool $watchthis
-	 * @param string $sectionanchor
-	 * @param array $flags
-	 * @param Revision $revision
-	 * @param int $status
-	 * @param int $baseRevId
-	 */
-	public function onArticleSaveComplete( &$article, &$user, $text, $summary,
-	        $minoredit, $watchthis, $sectionanchor, &$flags, $revision, &$status, $baseRevId ) {
-		try {
-			return $this->reindexBatch( array( $article->getTitle()->getArticleID() ) );
-		} catch ( Exception $e ) {
-		    F::build( 'Wikia' )->log( __METHOD__, '', $e );
-		    return true;
-		}
-	}
-	
-	/**
-	 * Reindexes page on undelete
-	 * @param Title $title
-	 * @param int $create
-	 */
-	public function onArticleUndelete( $title, $create ) {
-		try {
-			return $this->reindexBatch( array( $title->getArticleID() ) );
-		} catch ( Exception $e ) {
-			F::build( 'Wikia' )->log( __METHOD__, '', $e );
-			return true;
-		}
-	}
-	
-	/**
-	 * Issues a reindex event or deletes all docs, depending on whether a wiki is being closed or reopened
-	 * @see    WikiaSearchIndexerTest::testOnWikiFactoryPublicStatusChangeClosed
-	 * @see    WikiaSearchIndexerTest::testOnWikiFactoryPublicStatusChangeOpened
-	 * @todo   Rewrite this to use is_closed_wiki when we can utilize atomic updates
-	 * @param  int    $city_public
-	 * @param  int    $city_id
-	 * @param  string $reason
-	 * @return bool
-	 */
-	public function onWikiFactoryPublicStatusChange( &$city_public, &$city_id, $reason ) {
-		
-		if ( $city_public < 1 ) {
-			$this->deleteWikiDocs( $city_id );
-		} else {
-			$this->reindexWiki( $city_id );
-		}
 		
 		return true;
 	}

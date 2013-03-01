@@ -1,49 +1,50 @@
-<?php 
+<?php
 /**
- * Class definition for WikiaSearchConfig
+ * Class definition for Wikia\Search\Config
  */
-use Wikia\Search\MediaWikiInterface;
+namespace Wikia\Search;
+use Wikia\Search\MediaWikiInterface, \Sanitizer, \Solarium_Query_Select, \Wikia\Search\Match, \ArrayAccess;
 /**
  * A config class intended to handle variable flags for search
  * Intended to be a dependency-injected receptacle for different search requirements
  * @author Robert Elwell
  */
-class WikiaSearchConfig implements \ArrayAccess
+class Config implements ArrayAccess
 {
 	/**
 	 * Default number of results per page. Usually overwritten. 
 	 * @var int
 	 */
-	const RESULTS_PER_PAGE	=	10;
+	const RESULTS_PER_PAGE = 10;
 	
 	/**
 	 * Constant for retrieving query -- default behavior
 	 * @var int
 	 */
-	const QUERY_DEFAULT		=	1;
+	const QUERY_DEFAULT = 1;
 	
 	/**
 	 * Constant for retrieving query -- retrieve query without escaping
 	 * @var int
 	 */
-	const QUERY_RAW			=	2;
+	const QUERY_RAW = 2;
 	
 	/**
 	 * Constant for retrieving query -- retrieve unescaped query with HTML entities encoded
 	 * @var int
 	 */
-	const QUERY_ENCODED		=	3;
+	const QUERY_ENCODED = 3;
 	
 	/**
 	 * Constants for public filter queries
 	 *
 	 */
-	const FILTER_VIDEO				= 	'is_video';
-	const FILTER_IMAGE				=	'is_image';
-	const FILTER_HD					=	'is_hd';
-	const FILTER_CAT_VIDEOGAMES 	=	'cat_videogames';
-	const FILTER_CAT_ENTERTAINMENT	=	'cat_entertainment';
-	const FILTER_CAT_LIFESTYLE		=	'cat_lifestyle';
+	const FILTER_VIDEO              = 'is_video';
+	const FILTER_IMAGE              = 'is_image';
+	const FILTER_HD                 = 'is_hd';
+	const FILTER_CAT_VIDEOGAMES     = 'cat_videogames';
+	const FILTER_CAT_ENTERTAINMENT  = 'cat_entertainment';
+	const FILTER_CAT_LIFESTYLE      = 'cat_lifestyle';
 	
 	/**
 	 * Default parameters for a number of values that come up regularly in search
@@ -63,21 +64,23 @@ class WikiaSearchConfig implements \ArrayAccess
 	 * @var array
 	 */
 	private $requestedFields = array(
-	        'id',
-	        'wikiarticles',
-	        'wikititle',
-	        'url',
-	        'wid',
-	        'canonical',
-	        'host',
-	        'ns',
-	        'indexed',
-	        'backlinks',
-	        'title',
-	        'score',
-	        'created',
-	        'views',
-	        'categories',
+			'id',
+			'pageid',
+			'wikiarticles',
+			'wikititle',
+			'url',
+			'wid',
+			'canonical',
+			'host',
+			'ns',
+			'indexed',
+			'backlinks',
+			'title',
+			'score',
+			'created',
+			'views',
+			'categories',
+			'hub',
 	);
 	
 	/**
@@ -99,16 +102,16 @@ class WikiaSearchConfig implements \ArrayAccess
 	 * @var array
 	 */
 	private $rankOptions = array(
-	        'default'			=>	array( 'score',		Solarium_Query_Select::SORT_DESC ),
-	        'newest'			=>	array( 'created',	Solarium_Query_Select::SORT_DESC ),
-	        'oldest'			=>	array( 'created',	Solarium_Query_Select::SORT_ASC  ),
-	        'recently-modified'	=>	array( 'touched',	Solarium_Query_Select::SORT_DESC ),
-	        'stable'			=>	array( 'touched',	Solarium_Query_Select::SORT_ASC  ),
-	        'most-viewed'		=>	array( 'views',		Solarium_Query_Select::SORT_DESC ),
-	        'freshest'			=>	array( 'indexed',	Solarium_Query_Select::SORT_DESC ),
-	        'stalest'			=>	array( 'indexed', 	Solarium_Query_Select::SORT_ASC  ),
-			'shortest'			=>	array( 'video_duration_i', Solarium_Query_Select::SORT_ASC ),
-			'longest'			=>	array( 'video_duration_i', Solarium_Query_Select::SORT_DESC ),
+			'default'           =>	array( 'score', Solarium_Query_Select::SORT_DESC ),
+			'newest'            =>	array( 'created', Solarium_Query_Select::SORT_DESC ),
+			'oldest'            =>	array( 'created', Solarium_Query_Select::SORT_ASC  ),
+			'recently-modified' =>	array( 'touched', Solarium_Query_Select::SORT_DESC ),
+			'stable'            =>	array( 'touched', Solarium_Query_Select::SORT_ASC  ),
+			'most-viewed'       =>	array( 'views', Solarium_Query_Select::SORT_DESC ),
+			'freshest'          =>	array( 'indexed', Solarium_Query_Select::SORT_DESC ),
+			'stalest'           =>	array( 'indexed', Solarium_Query_Select::SORT_ASC  ),
+			'shortest'          =>	array( 'video_duration_i', Solarium_Query_Select::SORT_ASC ),
+			'longest'           =>	array( 'video_duration_i', Solarium_Query_Select::SORT_DESC ),
 	);
 	
 	private $publicFilterKeys = array(
@@ -127,9 +130,9 @@ class WikiaSearchConfig implements \ArrayAccess
 	 * @var array
 	 */
 	private $filterCodes = array(
-			self::FILTER_VIDEO	=>	'is_video:true',
-			self::FILTER_IMAGE	=>	'is_image:true',
-			self::FILTER_HD		=>	'video_hd_b:true',
+			self::FILTER_VIDEO => 'is_video:true',
+			self::FILTER_IMAGE => 'is_image:true',
+			self::FILTER_HD    => 'video_hd_b:true',
 	);
 	
 	/**
@@ -153,16 +156,15 @@ class WikiaSearchConfig implements \ArrayAccess
 	
 	/**
 	 * Constructor method
-	 * @see   WikiaSearchConfigTest::testConstructor
 	 * @param array $params
 	 */
 	public function __construct( array $params = array() ) {
 		$this->interface = MediaWikiInterface::getInstance();
 		
 		$dynamicFilterCodes = array(
-				self::FILTER_CAT_VIDEOGAMES		=>	WikiaSearch::valueForField( 'categories', 'Video Games', array( 'quote'=>'"' )  ),
-				self::FILTER_CAT_ENTERTAINMENT	=>	WikiaSearch::valueForField( 'categories', 'Entertainment' ),
-				self::FILTER_CAT_LIFESTYLE		=>	WikiaSearch::valueForField( 'categories', 'Lifestyle'),
+				self::FILTER_CAT_VIDEOGAMES    => Utilities::valueForField( 'categories', 'Video Games', array( 'quote'=>'"' ) ),
+				self::FILTER_CAT_ENTERTAINMENT => Utilities::valueForField( 'categories', 'Entertainment' ),
+				self::FILTER_CAT_LIFESTYLE     => Utilities::valueForField( 'categories', 'Lifestyle'),
 				);
 		
 		$this->filterCodes = array_merge( $this->filterCodes, $dynamicFilterCodes );
@@ -177,11 +179,10 @@ class WikiaSearchConfig implements \ArrayAccess
 	/**
 	 * Magic getters and setters used to make it ease array access.
 	 * Setter provides fluent interface.
-	 * @see    WikiaSearchConfigTest::testMagicMethods 
 	 * @param  string $method
 	 * @param  array  $params
-	 * @throws  BadMethodCallException
-	 * @return Ambigous <NULL, multitype:>|WikiaSearchConfig
+	 * @throws \BadMethodCallException
+	 * @return Ambigous <NULL, multitype:>|Wikia\Search\Config
 	 */
 	public function __call($method, $params) {
 		if ( substr($method, 0, 3) == 'get' ) {
@@ -190,44 +191,46 @@ class WikiaSearchConfig implements \ArrayAccess
 			$this->offsetSet( strtolower($method[3]).substr($method, 4), $params[0] );
 			return $this; // fluent
 		}
-		throw new BadMethodCallException( "Unknown method: {$method}" );
+		throw new \BadMethodCallException( "Unknown method: {$method}" );
 	}
 	
 	/**
-	 * @see WikiaSearchConfigTest::testArrayAccessMethods
-	 * @see ArrayAccess::offsetExists()
+	 * Determines if the value is set.
+	 * @param mixed $offset
+	 * @return mixed
 	 */
-	public function offsetExists ($offset) {
-		return isset($this->params[$offset]);
+	public function offsetExists( $offset ) {
+		return isset( $this->params[$offset] );
 	}
 
 	/**
-	 * @see WikiaSearchConfigTest::testArrayAccessMethods
-	 * @see ArrayAccess::offsetGet()
+	 * Returns the value requested
+	 * @param mixed $offset
+	 * @return mixed
 	 */
-	public function offsetGet ($offset) {
-		return isset($this->params[$offset]) ? $this->params[$offset] : null;
+	public function offsetGet( $offset ) {
+		return isset( $this->params[$offset] ) ? $this->params[$offset] : null;
 	}
 
 	/**
-	 * @see WikiaSearchConfigTest::testArrayAccessMethods
-	 * @see ArrayAccess::offsetSet()
+	 * Sets a value.
+	 * @param mixed $offset
+	 * @param mixed $value
 	 */
-	public function offsetSet ($offset, $value) {
+	public function offsetSet( $offset, $value ) {
 		$this->params[$offset] = $value;
 	}
 
 	/**
-	 * @see WikiaSearchConfigTest::testArrayAccessMethods
-	 * @see ArrayAccess::offsetUnset()
+	 * Unsets a value from params.
+	 * @param mixed $offset
 	 */
-	public function offsetUnset ($offset) {
-		unset($this->params[$offset]);
+	public function offsetUnset( $offset ) {
+		unset( $this->params[$offset] );
 	}
 	
 	/**
 	 * Synonym function for backwards compatibility
-	 * @see    WikiaSearchConfigTest::testGetSize
 	 * @return integer
 	 */
 	public function getSize() {
@@ -236,7 +239,6 @@ class WikiaSearchConfig implements \ArrayAccess
 	
 	/**
 	 * Provides the appropriate search result length based on whether we have an article match or not
-	 * @see    WikiaSearchConfigTest::testGetSize
 	 * @return integer
 	 */
 	public function getLength() {
@@ -248,9 +250,8 @@ class WikiaSearchConfig implements \ArrayAccess
 	/**
 	 * Used to store the query from the request as passed by the controller.
 	 * We remove any namespaces prefixes, but store the original query under the originalQuery param.
-	 * @see    WikiaSearchConfigTest::testQueryAndNamespaceMethods
 	 * @param  string $query
-	 * @return WikiaSearchConfig provides fluent interface
+	 * @return Wikia\Search\Config provides fluent interface
 	 */
 	public function setQuery( $query ) {
 		
@@ -278,7 +279,6 @@ class WikiaSearchConfig implements \ArrayAccess
 	
 	/**
 	 * Most of the time, we want the query escaped for XSS and Lucene syntax well-formedness
-	 * @see    WikiaSearchConfigTest::testQueryAndNamespaceMethods
 	 * @param  int $strategy one of the self::QUERY_ constants
 	 * @return string
 	 */
@@ -286,39 +286,34 @@ class WikiaSearchConfig implements \ArrayAccess
 		if (! isset( $this->params['query'] ) ) {
 			return false;
 		}
-		
-		$query = $strategy !== self::QUERY_DEFAULT	? $this->params['query'] : WikiaSearch::sanitizeQuery( $this->params['query'] );
-		$query = $strategy === self::QUERY_ENCODED	? htmlentities( $query, ENT_COMPAT, 'UTF-8' ) : $query;
+		$query = $strategy !== self::QUERY_DEFAULT ? $this->params['query'] : Utilities::sanitizeQuery( $this->params['query'] );
+		$query = $strategy === self::QUERY_ENCODED ? htmlentities( $query, ENT_COMPAT, 'UTF-8' ) : $query;
 		
 		if ( $this->isInterWiki() ) {
 			$query = preg_replace( '/ wiki\b/i', '', $query);
 		}
-		
 		return $query;
 	}
 	
 	/**
 	 * Strips out quotes, and optionally
-	 * @see    WikiaSearchConfigTest::testQueryAndNamespaceMethods 
 	 * @param  boolean $raw
 	 * @return string
 	 */
 	public function getQueryNoQuotes( $raw = false ) {
 		$query = preg_replace( "/['\"]/", '', preg_replace( "/(\\w)['\"](\\w)/", '$1 $2',  $this->getQuery( self::QUERY_RAW ) ) );
-		return $raw ? $query : WikiaSearch::sanitizeQuery( $query );
+		return $raw ? $query : Utilities::sanitizeQuery( $query );
 	}
 	
 	/**
 	 * Returns the namespaces that were set if they have been set, otherwise returns default namespaces.
 	 * If a query with a namespace prefix has been set, we also include this value in the namespace array.
-	 * @see    WikiaSearchConfigTest::testQueryAndNamespaceMethods
 	 * @return array
 	 */
-	public function getNamespaces()	{
-		$searchEngine = F::build( 'SearchEngine' );
-		$namespaces = ( isset($this->params['namespaces']) && !empty($this->params['namespaces']) ) 
+	public function getNamespaces() {
+		$namespaces = ( isset($this->params['namespaces']) && !empty( $this->params['namespaces'] ) ) 
 					? $this->params['namespaces'] 
-					: $searchEngine->defaultNamespaces();
+					: $this->interface->getDefaultNamespacesFromSearchEngine();
 		if (! is_array( $namespaces ) ) { 
 			$namespaces = array();
 		}
@@ -330,7 +325,6 @@ class WikiaSearchConfig implements \ArrayAccess
 	
 	/**
 	 * Provides the appropriate values for Solarium sorting based on our sort names
-	 * @see    WikiaSearchConfigTest::testGetSort
 	 * @return array where index 0 is the field name and index 1 is the constant used for ASC or DESC in solarium
 	 */
 	public function getSort() {
@@ -340,16 +334,15 @@ class WikiaSearchConfig implements \ArrayAccess
 			return $this->params['sort'];
 		}
 		$rank = $this->getRank();
-		return isset($this->rankOptions[$rank]) ? $this->rankOptions[$rank] : $this->rankOptions['default']; 
+		return isset( $this->rankOptions[$rank] ) ? $this->rankOptions[$rank] : $this->rankOptions['default']; 
 	}
 	
 	/**
 	 * Determines whether an article match has been set
-	 * @see    WikiaSearchConfigTest::testArticleMatching
 	 * @return boolean
 	 */
 	public function hasArticleMatch() {
-		return isset($this->params['articleMatch']) && !empty($this->params['articleMatch']);
+		return isset( $this->params['articleMatch'] ) && !empty( $this->params['articleMatch'] );
 	}
 	
 	/**
@@ -357,16 +350,15 @@ class WikiaSearchConfig implements \ArrayAccess
 	 * @return boolean
 	 */
 	public function hasWikiMatch() {
-		return isset($this->params['wikiMatch']) && !empty($this->params['wikiMatch']);
+		return isset( $this->params['wikiMatch'] ) && !empty( $this->params['wikiMatch'] );
 	}
 	
 	/**
 	 * Overloading __set to type hint
-	 * @see    WikiaSearchConfigTest::testArticleMatching
 	 * @param  Wikia\Search\Match\Article $articleMatch
-	 * @return WikiaSearchConfig provides fluent interface
+	 * @return Wikia\Search\Config provides fluent interface
 	 */
-	public function setArticleMatch( Wikia\Search\Match\Article $articleMatch ) {
+	public function setArticleMatch( Match\Article $articleMatch ) {
 		$this->params['articleMatch'] = $articleMatch;
 		return $this;
 	}
@@ -374,20 +366,27 @@ class WikiaSearchConfig implements \ArrayAccess
 	/**
 	 * Overloading __set to type hint
 	 * @param  Wikia\Search\Match\Wiki $wikiMatch
-	 * @return WikiaSearchConfig provides fluent interface
+	 * @return Wikia\Search\Config provides fluent interface
 	 */
-	public function setWikiMatch( Wikia\Search\Match\Wiki $wikiMatch ) {
+	public function setWikiMatch( Match\Wiki $wikiMatch ) {
 		$this->params['wikiMatch'] = $wikiMatch;
 		return $this;
 	}
 	
 	/**
 	 * For IDE type-hinting
-	 * @see    WikiaSearchConfigTest::testArticleMatching
 	 * @return Wikia\Search\Match\Article
 	 */
 	public function getArticleMatch() {
 		return isset( $this['articleMatch'] ) ? $this['articleMatch'] : null;
+	}
+	
+	/**
+	 * Agnostic match verifier
+	 * @return boolean
+	 */
+	public function hasMatch() {
+		return $this->hasArticleMatch() | $this->hasWikiMatch();
 	}
 	
 	/**
@@ -400,7 +399,6 @@ class WikiaSearchConfig implements \ArrayAccess
 	
 	/**
 	 * Returns desired number of results WITHOUT consideration for article match
-	 * @see    WikiaSearchConfigTest::testGetSize
 	 * @return int
 	 */
 	public function getLimit()
@@ -410,9 +408,8 @@ class WikiaSearchConfig implements \ArrayAccess
 	
 	/**
 	 * Sets length value, so we don't get confused
-	 * @see    WikiaSearchConfigTest::testGetSize
 	 * @param  int $val
-	 * @return WikiaSearchConfig provides fluent interface
+	 * @return Wikia\Search\Config provides fluent interface
 	 */
 	public function setLimit( $val )
 	{
@@ -428,7 +425,7 @@ class WikiaSearchConfig implements \ArrayAccess
 	{
 		$fieldsPrepped = array();
 		foreach ( $this['requestedFields'] as $field ) {
-			$fieldsPrepped[] = WikiaSearch::field( $field );
+			$fieldsPrepped[] = Utilities::field( $field );
 		}
 		
 		if (! ( in_array( 'id', $fieldsPrepped ) || in_array( '*', $fieldsPrepped ) ) ) {
@@ -440,7 +437,6 @@ class WikiaSearchConfig implements \ArrayAccess
 	
 	/**
 	 * Synonym function for backwards compatibility
-	 * @see    WikiaSearchConfigTest::testInterWiki
 	 * @return boolean
 	 */
 	public function isInterWiki() {
@@ -449,18 +445,16 @@ class WikiaSearchConfig implements \ArrayAccess
 	
 	/**
 	 * Synonym function for backwards compatibility
-	 * @see    WikiaSearchConfigTest::testInterWiki
 	 * @return boolean
 	 */
 	public function getIsInterWiki() {
-	    return $this->getInterWiki();
+		return $this->getInterWiki();
 	}
 	
 	/**
 	 * Synonym function for backward compatbility
-	 * @see    WikiaSearchConfigTest::testInterWiki
 	 * @param  boolean $value
-	 * @return WikiaSearchConfig provides fluent interface
+	 * @return Wikia\Search\Config provides fluent interface
 	 */
 	public function setIsInterWiki( $value ) {
 		$this->params['interWiki'] = $value;
@@ -469,22 +463,24 @@ class WikiaSearchConfig implements \ArrayAccess
 	
 	/**
 	 * Returns results number based on a truncated heuristic
-	 * @see    WikiaSearchConfigTest::testTruncatedResultsNum
 	 * @return integer
 	 */
-	public function getTruncatedResultsNum() 
+	public function getTruncatedResultsNum( $formatted = false ) 
 	{
 		$resultsNum = $this->getResultsFound();
 		
-	    $result = $resultsNum;
+		$result = $resultsNum;
 	
-	    $digits = strlen( $resultsNum );
-	    if( $digits > 1 ) {
-	        $zeros = ( $digits > 3 ) ? ( $digits - 1 ) : $digits;
-	        $result = round( $resultsNum, ( 0 - ( $zeros - 1 ) ) );
-	    }
-	
-	    return $result;
+		$digits = strlen( $resultsNum );
+		if( $digits > 1 ) {
+			$zeros = ( $digits > 3 ) ? ( $digits - 1 ) : $digits;
+			$result = round( $resultsNum, ( 0 - ( $zeros - 1 ) ) );
+		}
+		
+		if ( $formatted ) {
+			$result = $this->interface->formatNumber( $result ); 
+		}
+		return $result;
 	}
 	
 	/**
@@ -493,18 +489,15 @@ class WikiaSearchConfig implements \ArrayAccess
 	 * @return array
 	 */
 	public function getSearchProfiles() {
-	    // Builds list of Search Types (profiles)
-	    $searchEngine = F::build( 'SearchEngine' );
-		/* @var $searchEngine SearchEngine */
-	    $nsAllSet = array_keys( $searchEngine->searchableNamespaces() );
-	    $defaultNamespaces = $searchEngine->defaultNamespaces();
+		$nsAllSet = array_keys( $this->interface->getSearchableNamespacesFromSearchEngine() );
+		$defaultNamespaces = $this->interface->getDefaultNamespacesFromSearchEngine();
 
 	    $profiles = array(
 	            SEARCH_PROFILE_DEFAULT => array(
 	                    'message' => 'wikiasearch2-tabs-articles',
 	                    'tooltip' => 'searchprofile-articles-tooltip',
 	                    'namespaces' => $defaultNamespaces,
-	                    'namespace-messages' => $searchEngine->namespacesAsText( $defaultNamespaces ),
+	                    'namespace-messages' => $this->interface->getTextForNamespaces( $defaultNamespaces ),
 	            ),
 	            SEARCH_PROFILE_IMAGES => array(
 	                    'message' => 'wikiasearch2-tabs-photos-and-videos',
@@ -547,8 +540,7 @@ class WikiaSearchConfig implements \ArrayAccess
 		if( $this->getAdvanced() ) {
 		    return SEARCH_PROFILE_ADVANCED;
 		}
-		$searchEngine = F::build( 'SearchEngine' ); 
-		$searchableNamespaces = array_keys( $searchEngine->searchableNamespaces() );
+		$searchableNamespaces = array_keys( $this->interface->getSearchableNamespacesFromSearchEngine() );
 		
 		// $nsVals should always have a value at this point
 		$nsVals = $this->getNamespaces();
@@ -556,17 +548,16 @@ class WikiaSearchConfig implements \ArrayAccess
 		// we will always return at least SEARCH_PROFILE_ADVANCED, because it is identical to the return value of getNamespaces
 		$searchProfile = SEARCH_PROFILE_ADVANCED;
 		foreach( $this->getSearchProfiles() as $name => $profile ) {
-		    if (   ( count( array_diff( $nsVals, $profile['namespaces'] ) ) == 0 ) 
-		    	&& ( count( array_diff($profile['namespaces'], $nsVals ) ) == 0 ) ) {
-	        	$searchProfile = $name !== SEARCH_PROFILE_ADVANCED ? $name : $searchProfile;
-		    }
+			if (   ( count( array_diff( $nsVals, $profile['namespaces'] ) ) == 0 ) 
+				&& ( count( array_diff($profile['namespaces'], $nsVals ) ) == 0 ) ) {
+				$searchProfile = $name !== SEARCH_PROFILE_ADVANCED ? $name : $searchProfile;
+			}
 		}
 		return $searchProfile;
 	}
 	
 	/**
 	 * Determines the number of pages based on the desired number of results per page
-	 * @see    WikiaSearchConfigTest::testGetNumPages
 	 * @return integer 
 	 */
 	public function getNumPages() {
@@ -576,7 +567,6 @@ class WikiaSearchConfig implements \ArrayAccess
 	/**
 	 * If the cityId hasn't been set, and we're not interwiki, we use $wgCityId. 
 	 * Otherwise, return the set value.
-	 * @see    WikiaSearchConfigTest::testGetCityId
 	 * @return int
 	 */
 	public function getCityId() {
@@ -588,9 +578,8 @@ class WikiaSearchConfig implements \ArrayAccess
 	
 	/**
 	 * Normalizes the cityId value in case of mistyping
-	 * @see    WikiaSearchConfigTest::testGetCityId
 	 * @param  int $value
-	 * @return WikiaSearchConfig
+	 * @return Wikia\Search\Config
 	 */
 	public function setCityID( $value ) {
 		return $this->__call( 'setCityId', array( $value ) );
@@ -601,7 +590,7 @@ class WikiaSearchConfig implements \ArrayAccess
 	 * Note that if you provide a key that already exists, you are overwriting that filter query.
 	 * @param  string $queryString
 	 * @param  string $key
-	 * @return WikiaSearchConfig
+	 * @return Wikia\Search\Config
 	 */
 	public function setFilterQuery( $queryString, $key = null ) {
 		$key = $key ?: sprintf( 'fq%d', ++self::$filterQueryIncrement );
@@ -616,7 +605,7 @@ class WikiaSearchConfig implements \ArrayAccess
 	 * Allows you to set all filter queries wholesale.
 	 * Pass an empty array if you want to reinitialize this property.
 	 * @param  array $filterQueries
-	 * @return WikiaSearchConfig
+	 * @return Wikia\Search\Config
 	 */
 	public function setFilterQueries( array $filterQueries ) {
 		$newFilterQueries = array();
@@ -644,13 +633,10 @@ class WikiaSearchConfig implements \ArrayAccess
 	 * Returns public filter query keys
 	 * @return array
 	 */
-
 	public function getPublicFilterKeys() {
-		
 		$publicKeys = $this->publicFilterKeys;
-		$filterKeys = array_keys($this->filterQueries);
-
-		return array_filter($filterKeys, function ($key) use ($publicKeys) { return in_array($key, $publicKeys); } );
+		$filterKeys = array_keys( $this->filterQueries );
+		return array_filter( $filterKeys, function ( $key ) use ( $publicKeys ) { return in_array($key, $publicKeys); } );
 	}
 	
 	/**
@@ -664,15 +650,11 @@ class WikiaSearchConfig implements \ArrayAccess
 	/**
 	 * Uses pre-determined filter queries that can be set by the controller (e.g. video filtering)
 	 * @param  string $code
-	 * @return WikiaSearchConfig
+	 * @return Wikia\Search\Config
 	 */
 	public function setFilterQueryByCode( $code ) {
-
 		if ( isset( $this->filterCodes[$code] ) ) {
 			$this->setFilterQuery( $this->filterCodes[$code], $code );
-		} else {
-			// the fun things we do to test static methods
-			F::build( 'Wikia' )->log( __METHOD__, '', "Filter code {$code} does not exist." );
 		}
 		return $this;
 	}
@@ -680,7 +662,7 @@ class WikiaSearchConfig implements \ArrayAccess
 	/**
 	 * Allows us to use pass array of codes in the controller to the search config
 	 * @param  array $codes
-	 * @return WikiaSearchConfig
+	 * @return Wikia\Search\Config
 	 */
 	public function setFilterQueriesFromCodes( array $codes ) {
 		foreach ( $codes as $code ) {
@@ -693,7 +675,7 @@ class WikiaSearchConfig implements \ArrayAccess
 	 * Allows us to add additional query fields, with a given boost.
 	 * @param string $field
 	 * @param int $boost
-	 * @return WikiaSearchConfig
+	 * @return Wikia\Search\Config
 	 */
 	public function setQueryField( $field, $boost = 1 ) {
 		$this->queryFieldsToBoosts[$field] = $boost;
@@ -703,7 +685,7 @@ class WikiaSearchConfig implements \ArrayAccess
 	/**
 	 * Lets us add multiple fields. Can handle both associative with boosts as value and flat.
 	 * @param array $fields
-	 * @return WikiaSearchConfig
+	 * @return Wikia\Search\Config
 	 */
 	public function addQueryFields( array $fields ) {
 		if ( array_values( $fields ) === $fields ) {
@@ -729,7 +711,7 @@ class WikiaSearchConfig implements \ArrayAccess
 	/**
 	 * Allows us to manually set query fields externally. Supports flat and associative.
 	 * @param array $fields
-	 * @return WikiaSearchConfig
+	 * @return Wikia\Search\Config
 	 */
 	public function setQueryFields( array $fields ) {
 		if ( array_values( $fields ) === $fields ) {
@@ -754,7 +736,7 @@ class WikiaSearchConfig implements \ArrayAccess
 	/**
 	 * Allows global variables like $wgSearchBoostFor_title to overwrite default boost values defined in this class.
 	 * Run during __construct().
-	 * @return WikiaSearchConfig
+	 * @return Wikia\Search\Config
 	 */
 	protected function importQueryFieldBoosts() {
 		foreach ( $this->queryFieldsToBoosts as $field => $boost ) {
@@ -762,5 +744,4 @@ class WikiaSearchConfig implements \ArrayAccess
 		}
 		return $this;
 	}
-
 }

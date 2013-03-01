@@ -47,31 +47,6 @@ class WikiaSearchController extends WikiaSpecialPageController {
 
 		$resultsPerPage = empty( $this->wg->SearchResultsPerPage ) ? self::RESULTS_PER_PAGE : $this->wg->SearchResultsPerPage;
 		
-		$searchConfig
-			->setQuery			( $this->getVal('query', $this->getVal('search') ) )
-			->setCityId			( $this->wg->CityId )
-			->setLimit			( $this->getVal('limit', $resultsPerPage ) )
-			->setPage			( $this->getVal('page', 1) )
-			->setRank			( $this->getVal('rank', 'default') )
-			->setDebug			( $this->request->getBool('debug', false) )
-			->setSkipCache		( $this->request->getBool('skipCache', false) )
-			->setAdvanced		( $this->request->getBool( 'advanced', false ) )
-			->setHub			( ($this->getVal('nohub') != '1') ? $this->getVal('hub', false) : false )
-			->setRedirs			( $searchConfig->getAdvanced() ? $this->request->getBool('redirs', false) : false )
-			->setIsInterWiki	( $this->request->getBool('crossWikia', false) || $this->isCorporateWiki() )
-			->setVideoSearch	( $this->getVal('videoSearch', false) )
-			->setGroupResults	( $searchConfig->isInterWiki() || $this->getVal('grouped', false) )
-			->setFilterQueriesFromCodes( $this->getVal( 'filters', array() ) )
-		 ;
-
-		$this->setNamespacesFromRequest( $searchConfig, $this->wg->User );
-
-		if($this->isCorporateWiki()) {
-			OasisController::addBodyClass('inter-wiki-search');
-			// overwrite templete for cross wiki search
-			$this->overrideTemplate( 'CorporateWiki_index' );
-		}
-
 		if( $searchConfig->getQueryNoQuotes( true ) ) {
 			$this->wikiaSearch->getMatch( $searchConfig );
 			if ( $searchConfig->getPage() == 1 ) {
@@ -98,6 +73,12 @@ class WikiaSearchController extends WikiaSpecialPageController {
 		$format = $this->response->getFormat();
 		if( ($format == 'json' || $format == 'jsonp') && ($searchConfig->getResultsFound() > 0) ){
 			$searchConfig->setResults( $searchConfig->getResults()->toNestedArray() );
+		}
+
+		if($this->isCorporateWiki()) {
+			OasisController::addBodyClass('inter-wiki-search');
+			// overwrite templete for cross wiki search
+			$this->overrideTemplate( 'CorporateWiki_index' );
 		}
 
 		$tabsArgs = array(
