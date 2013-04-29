@@ -199,12 +199,13 @@ class WallExternalController extends WikiaController {
 			return true;
 		}
 
+		$title = F::build('Title', array($this->request->getVal('pagetitle'), $this->request->getVal('pagenamespace')), 'newFromText');
+
 		$notifyEveryone = false;
-		if ($helper->isAllowedNotifyEveryone($this->wg->Title->getNamespace(), $this->wg->User)) {
+		if ($helper->isAllowedNotifyEveryone($title->getNamespace(), $this->wg->User)) {
 			$notifyEveryone = $this->request->getVal('notifyeveryone', false) == 1;
 		}
 
-		$title = F::build('Title', array($this->request->getVal('pagetitle'), $this->request->getVal('pagenamespace')), 'newFromText');
 		$wallMessage = F::build('WallMessage', array($body, $title, $this->wg->User, $titleMeta, false, $relatedTopics, true, $notifyEveryone), 'buildNewMessageAndPost');
 
 		if( $wallMessage === false ) {
