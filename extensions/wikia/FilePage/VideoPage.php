@@ -31,26 +31,35 @@ class WikiaVideoPage extends WikiaImagePage {
 		$app = F::app();
 		$autoplay = $app->wg->VideoPageAutoPlay;
 
-		if ( empty($wgEnableVideoPageRedesign) ) {
-			$wgOut->addHTML( '<div class="fullImageLink" id="file">'.$img->getEmbedCode( self::$videoWidth, $autoplay ).$this->getVideoInfoLine().'</div>' );
-		} else {
-			$imageLink = '<div class="fullImageLink" id="file">'.$img->getEmbedCode( self::$videoWidth, $autoplay ).'</div>';	/* hyun remark 2013-02-19 - do we still need this? */
+		//if ( empty($wgEnableVideoPageRedesign) ) {
+			//$wgOut->addHTML( '<div class="fullImageLink" id="file">'.$img->getEmbedCode( self::$videoWidth, $autoplay ).$this->getVideoInfoLine().'</div>' );
+		//} else {
+			$imageLink = '<div class="fullImageLink" id="file">'.$img->getEmbedCode( self::$videoWidth, $autoplay ).'</div>';
 
 			$wgOut->addHTML($imageLink);
 
-			$captionDetails = array(
-				'expireDate' => $img->getExpirationDate(),
-				'provider' => $img->getProviderName(),
-				'providerUrl' => $img->getProviderHomeUrl(),
-				'detailUrl' => $img->getProviderDetailUrl(),
-				'views' => MediaQueryService::getTotalVideoViewsByTitle( $img->getTitle()->getDBKey() ),
-			);
-			$caption = $app->renderView( 'FilePageController', 'videoCaption', $captionDetails );
+			$caption = $this->getCaptionLine($img);
 
 			$wgOut->addHTML($caption);
-		}
+		//}
 
 		wfProfileOut( __METHOD__ );
+	}
+
+	protected function getCaptionLine($img) {
+		$app = F::app();
+
+		$captionDetails = array(
+			'expireDate' => $img->getExpirationDate(),
+			'provider' => $img->getProviderName(),
+			'providerUrl' => $img->getProviderHomeUrl(),
+			'detailUrl' => $img->getProviderDetailUrl(),
+			'views' => MediaQueryService::getTotalVideoViewsByTitle( $img->getTitle()->getDBKey() ),
+		);
+
+		$caption = $app->renderView( 'FilePageController', 'videoCaption', $captionDetails );
+
+		return $caption;
 	}
 
 	protected function getVideoInfoLine() {
@@ -71,6 +80,10 @@ class WikiaVideoPage extends WikiaImagePage {
 		return $s;
 	}
 
+	/* This is not being called anymore because the parent method was moved to WikFilePage class
+	 * It used to be a fix for: https://wikia.fogbugz.com/default.asp?26737
+	 * So it's currently broken places like this: http://glee.wikia.com/wiki/File:Glee_Sugar%27s_Audition-3x01
+	 */
 	public function getDuplicates() {
 
 		wfProfileIn( __METHOD__ );
@@ -94,6 +107,7 @@ class WikiaVideoPage extends WikiaImagePage {
 		return $res;
 	}
 
+	// This is a helper function and can be moved out of here
 	public static function getVideosCategory() {
 
 		$cat = F::app()->wg->ContLang->getFormattedNsText( NS_CATEGORY );

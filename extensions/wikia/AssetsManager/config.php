@@ -1269,17 +1269,41 @@ $config['categoryselect_edit_js'] = array(
 
 /* FilePage */
 $config['file_page_js'] = array(
-	'type'=> AssetsManager::TYPE_JS,
+	'type' => AssetsManager::TYPE_JS,
+	'skin' => array( 'oasis' ),
 	'assets' => array(
 		'//extensions/wikia/FilePage/js/FilePage.js',
 	)
 );
-$config['file_page_css'] = array(
-	'type' =>AssetsManager::TYPE_SCSS,
+$config['file_page_js_oasis'] = array(
+	'type' => AssetsManager::TYPE_JS,
+	'skin' => array( 'oasis' ),
 	'assets' => array(
-		'//extensions/wikia/FilePage/css/FilePage.scss',
+		'//extensions/wikia/FilePage/js/FilePage_oasis.js',
 	)
 );
+$config['file_page_css_oasis'] = array(
+	'type' => AssetsManager::TYPE_SCSS,
+	'skin' => array( 'oasis' ),
+	'assets' => array(
+		'//extensions/wikia/FilePage/css/FilePage_oasis.scss',
+	)
+);
+$config['file_page_css_monobook'] = array(
+	'type' => AssetsManager::TYPE_SCSS,
+	'skin' => array( 'monobook' ),
+	'assets' => array(
+		'//extensions/wikia/FilePage/css/FilePage_monobook.scss',
+	)
+);
+$config['file_page_css_mobile'] = array(
+	'type' => AssetsManager::TYPE_SCSS,
+	'skin' => array( 'wikiamobile' ),
+	'assets' => array(
+		'//extensions/wikia/FilePage/css/FilePage_mobile.scss',
+	)
+);
+
 /* LyricFind */
 $config['LyricsFindTracking'] = array(
 	'type' => AssetsManager::TYPE_JS,

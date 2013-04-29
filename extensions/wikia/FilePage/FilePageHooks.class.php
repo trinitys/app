@@ -40,16 +40,33 @@ class FilePageHooks extends WikiaObject{
 		// load assets when File Page redesign is enabled and on the File Page
 		if( !empty($app->wg->EnableVideoPageRedesign) && $app->wg->Title->getNamespace() == NS_FILE ) {
 			$assetsManager = F::build( 'AssetsManager', array(), 'getInstance' );
-			$scssPackage = 'file_page_css';
-			$jsPackage = 'file_page_js';
 
-			foreach ( $assetsManager->getURL( $scssPackage ) as $url ) {
-				$out->addStyle( $url );
+			// Oasis
+			if ( $app->checkSkin( 'oasis', $skin ) ) {
+				foreach ( $assetsManager->getURL( 'file_page_css_oasis' ) as $url ) {
+					$out->addStyle( $url );
+				}
+				foreach ( $assetsManager->getURL( 'file_page_js_oasis' ) as $url ) {
+					$out->addScript( "<script src=\"{$url}\"></script>" );
+				}
+
+			// Monobook
+			} else if ( $app->checkSkin( 'monobook', $skin ) ) {
+				foreach ( $assetsManager->getURL( 'file_page_css_monobook' ) as $url ) {
+					$out->addStyle( $url );
+				}
+
+			// WikiaMobile
+			} else if ( $app->checkSkin( 'wikiamobile', $skin ) ) {
+				foreach ( $assetsManager->getURL( 'file_page_css_mobile' ) as $url ) {
+					$out->addStyle( $url );
+				}
 			}
 
-			foreach ( $assetsManager->getURL( $jsPackage ) as $url ) {
+			foreach ( $assetsManager->getURL( 'file_page_js' ) as $url ) {
 				$out->addScript( "<script src=\"{$url}\"></script>" );
 			}
+
 		}
 
 		wfProfileOut(__METHOD__);

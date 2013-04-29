@@ -19,13 +19,13 @@ class WikiaImagePage extends ImagePage {
 	 * @param $metadata Boolean - doesn't matter
 	 * @return String - will return empty string to add
 	 */
-	protected function showTOC( $metadata ) {
+	/*protected function showTOC( $metadata ) {
 		$app = F::app();
 		if(empty($app->wg->EnableVideoPageRedesign) || $this->isMobile()) {
 			return parent::showTOC($metadata);
 		}
 		return '';
-	}
+	}*/
 
 	protected function isDiffPage() {
 		$app = F::App();
@@ -46,10 +46,10 @@ class WikiaImagePage extends ImagePage {
 		$out = $this->getContext()->getOutput();
 		$app = F::App();
 
-		if ( empty($app->wg->EnableVideoPageRedesign) || $this->isMobile() ) {
+		/*if ( empty($app->wg->EnableVideoPageRedesign) || $this->isMobile() ) {
 			parent::imageContent();
 			return;
-		}
+		}*/
 		$sectionClass = '';
 		if (! $this->isDiffPage() ) {
 			$this->renderTabs();
@@ -72,10 +72,10 @@ class WikiaImagePage extends ImagePage {
 		$app = F::App();
 		$out = $this->getContext()->getOutput();
 
-		if ( empty($app->wg->EnableVideoPageRedesign) || $this->isMobile() ) {
+		/*if ( empty($app->wg->EnableVideoPageRedesign) || $this->isMobile() ) {
 			parent::imageDetails();
 			return;
-		}
+		}*/
 
 		$out->addHTML( $app->renderView( 'FilePageController', 'fileUsage', array('type' => 'local') ) );
 		$out->addHTML( $app->renderView( 'FilePageController', 'fileUsage', array('type' => 'global') ) );
@@ -101,10 +101,10 @@ class WikiaImagePage extends ImagePage {
 		$app = F::App();
 		$out = $this->getContext()->getOutput();
 
-		if ( empty($app->wg->EnableVideoPageRedesign) || $this->isMobile() ) {
+		/*if ( empty($app->wg->EnableVideoPageRedesign) || $this->isMobile() ) {
 			parent::imageMetadata($formattedMetadata);
 			return;
-		}
+		}*/
 
 		$sectionClass = '';
 		if (! $this->isDiffPage() ) {
@@ -125,14 +125,14 @@ class WikiaImagePage extends ImagePage {
 	 * imageListing override.
 	 * for WikiaFilePage, imageListing will be printed under additionalDetails()
 	 */
-	protected function imageListing() {
+	/*protected function imageListing() {
 		$app = F::App();
 
 		if ( empty($app->wg->EnableVideoPageRedesign) || $this->isMobile() ) {
 			parent::imageListing();
 			return;
 		}
-	}
+	}*/
 
 	protected function renderTabs() {
 		$app = F::app();
@@ -142,6 +142,10 @@ class WikiaImagePage extends ImagePage {
 		$out->addHtml($tabs);
 	}
 
+	/* TODO: Rename this and clean up the logic a bit.
+	 * 1) We're no longer rendering a description header, so function name doesn't make sense.
+	 * 2) If content is empty, simply output default message.  We don't need a template for this.
+	 */
 	protected function renderDescriptionHeader() {
 		$app = F::App();
 		$out = $this->getContext()->getOutput();

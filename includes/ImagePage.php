@@ -642,7 +642,9 @@ EOT
 			return;
 		}
 
-		$wgOut->addHTML( "<br /><ul>\n" );
+		/* Wikia change begin - @author: liz - added mw-imagepage-reupload-link-ul class */
+		$wgOut->addHTML( "<br /><ul class='mw-imagepage-reupload-link-ul'>\n" );
+		/* Wikia change - end */
 
 		# "Upload a new version of this file" link
 		/* Wikia change begin - @author: mech - replacing ->name with ->getName(), as File::$name is protected */
